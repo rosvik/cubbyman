@@ -1,4 +1,4 @@
-use bollard::secret::Port;
+use bollard::secret::{Port, PortTypeEnum};
 
 pub fn bytes_to_human(bytes: i64) -> String {
     let gb: f32 = bytes as f32 / 1024.0 / 1024.0 / 1024.0;
@@ -16,9 +16,16 @@ pub fn bytes_to_human(bytes: i64) -> String {
 }
 
 pub fn format_port(port: &Port) -> String {
+    let url_prefix = match port.typ {
+        Some(PortTypeEnum::TCP) => "http://",
+        Some(PortTypeEnum::UDP) => "(UDP) ",
+        Some(PortTypeEnum::SCTP) => "(SCTP) ",
+        _ => "",
+    };
     format!(
-        "{} -> {}:{:?}",
+        "{} -> {}{}:{:?}",
         port.private_port,
+        url_prefix,
         port.ip.clone().unwrap_or_default(),
         port.public_port.unwrap_or_default()
     )
