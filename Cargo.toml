@@ -8,3 +8,4 @@ tokio = { version = "1", features = ["full"] }
 tokio-macros = "2.5.0"
 bollard = "0.18.1"
 clap = { version = "4.5.27", features = ["derive"] }
+crossterm = { version = "0.28.1", features = [] }
