@@ -1,3 +1,4 @@
+use crate::utils::*;
 use bollard::{
     container::{Config, CreateContainerOptions, ListContainersOptions, RemoveContainerOptions},
     secret::{HostConfig, PortBinding},
@@ -78,23 +79,27 @@ pub async fn print_containers(connection: bollard::Docker) {
         .unwrap();
     containers.iter().for_each(|container| {
         if let Some(id) = &container.id {
-            println!("{}", id.clone().grey());
+            println!("{}", id.clone().dark_grey());
         }
         if let Some(image) = &container.image {
-            print!("{}", image.clone().dark_cyan());
+            print!("{} ", image.clone().dark_cyan());
         }
         if let Some(names) = &container.names {
-            print!(" ( ");
             names.iter().for_each(|name| {
-                print!("{} ", name.clone().dark_cyan());
+                print!("{} ", name.clone().cyan());
             });
-            print!(")");
         }
 
-        if let Some(status) = &container.status {
-            print!(" {}", status.clone().yellow());
-        }
         println!();
+
+        if let Some(status) = &container.status {
+            print!("{} ", status);
+        }
+        container.ports.iter().for_each(|port| {
+            port.iter().for_each(|p| {
+                println!("{} ", format_port(p).yellow());
+            });
+        });
 
         if let Some(labels) = &container.labels {
             labels.iter().for_each(|(key, label)| {
