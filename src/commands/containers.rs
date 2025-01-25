@@ -1,7 +1,7 @@
 use crate::{config::ContainerConfig, utils::*};
 use bollard::{
     container::{CreateContainerOptions, ListContainersOptions, RemoveContainerOptions},
-    secret::{HostConfig, PortBinding},
+    secret::{HostConfig, MountTypeEnum, PortBinding},
 };
 use crossterm::style::Stylize;
 use std::default::Default;
@@ -27,13 +27,27 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
             )
         })
         .collect();
+    let mounts: Vec<bollard::secret::Mount> = config
+        .mounts
+        .unwrap_or_default()
+        .iter()
+        .map(|mount| bollard::secret::Mount {
+            target: Some(mount.container_path.clone()),
+            source: Some(mount.host_path.clone()),
+            typ: Some(MountTypeEnum::BIND),
+            ..Default::default()
+        })
+        .collect();
+
+    let host_config = HostConfig {
+        port_bindings: Some(port_bindings),
+        mounts: Some(mounts),
+        ..Default::default()
+    };
     let bollard_config = bollard::container::Config::<String> {
         image: Some(config.image),
         env: config.env,
-        host_config: Some(HostConfig {
-            port_bindings: Some(port_bindings),
-            ..Default::default()
-        }),
+        host_config: Some(host_config),
         ..Default::default()
     };
 
