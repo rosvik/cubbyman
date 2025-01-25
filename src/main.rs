@@ -22,16 +22,12 @@ async fn main() {
     let connection = bollard::Docker::connect_with_local_defaults().unwrap();
     let version = connection.version().await.unwrap();
     let args = Args::parse();
-    if args.status {
-        commands::status::print_status(version);
-        return;
-    }
-    if args.list_images {
-        commands::images::print_images(connection).await;
-        return;
-    }
 
-    if let Some(image) = args.pull {
-        commands::pull::pull_image(connection, image).await;
+    if args.status {
+        commands::system::print_status(version);
+    } else if args.list_images {
+        commands::images::print_images(connection).await;
+    } else if let Some(image) = args.pull {
+        commands::images::pull_image(connection, image).await;
     }
 }
