@@ -11,10 +11,14 @@ struct Args {
 
     #[arg(short, long, help = "List all images")]
     list_images: bool,
+
+    #[arg(short, long, help = "Pull an image")]
+    pull: Option<String>,
 }
 
 #[tokio::main]
 async fn main() {
+    dotenv::dotenv().ok();
     let connection = bollard::Docker::connect_with_local_defaults().unwrap();
     let version = connection.version().await.unwrap();
     let args = Args::parse();
@@ -25,5 +29,9 @@ async fn main() {
     if args.list_images {
         commands::images::print_images(connection).await;
         return;
+    }
+
+    if let Some(image) = args.pull {
+        commands::pull::pull_image(connection, image).await;
     }
 }
