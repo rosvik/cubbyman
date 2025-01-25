@@ -1,3 +1,4 @@
+[[containers]]
 name = "container-cubby"
 image = "cubby.no/rosvik/container-cubby:main"
 env = [
@@ -7,3 +8,7 @@ env = [
   "HOST=0.0.0.0"
 ]
 ports = ["8602:8602"]
+
+[[containers]]
+name = "hello"
+image = "hello"

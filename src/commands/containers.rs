@@ -1,4 +1,4 @@
-use crate::{config::Config, utils::*};
+use crate::{config::ContainerConfig, utils::*};
 use bollard::{
     container::{CreateContainerOptions, ListContainersOptions, RemoveContainerOptions},
     secret::{HostConfig, PortBinding},
@@ -6,7 +6,7 @@ use bollard::{
 use crossterm::style::Stylize;
 use std::default::Default;
 
-pub async fn run_container(socket: &bollard::Docker, config: Config) {
+pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
     println!("Running image {} ({})", config.image, config.name);
 
     let options = CreateContainerOptions::<String> {
@@ -15,6 +15,7 @@ pub async fn run_container(socket: &bollard::Docker, config: Config) {
     };
     let port_bindings = config
         .ports
+        .unwrap_or_default()
         .iter()
         .map(|port| {
             (
@@ -28,7 +29,7 @@ pub async fn run_container(socket: &bollard::Docker, config: Config) {
         .collect();
     let bollard_config = bollard::container::Config::<String> {
         image: Some(config.image),
-        env: Some(config.env),
+        env: config.env,
         host_config: Some(HostConfig {
             port_bindings: Some(port_bindings),
             ..Default::default()

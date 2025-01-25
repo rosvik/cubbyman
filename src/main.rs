@@ -40,7 +40,9 @@ async fn main() {
         commands::containers::print_containers(&socket).await;
     } else if let Some(config) = args.run {
         let config = config::load_config_from_file(&config).unwrap();
-        commands::containers::run_container(&socket, config).await;
+        for container in config.containers {
+            commands::containers::run_container(&socket, container).await;
+        }
     } else if let Some(container) = args.remove_container {
         commands::containers::remove_container(&socket, container)
             .await
