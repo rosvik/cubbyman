@@ -6,7 +6,7 @@ use bollard::{
 use crossterm::style::Stylize;
 use std::default::Default;
 
-pub async fn run_container(connection: &bollard::Docker, config: Config) {
+pub async fn run_container(socket: &bollard::Docker, config: Config) {
     println!("Running image {} ({})", config.image, config.name);
 
     let options = CreateContainerOptions::<String> {
@@ -37,20 +37,18 @@ pub async fn run_container(connection: &bollard::Docker, config: Config) {
     };
 
     // Attempt to remove container in case it already exists
-    let result = remove_container(connection, config.name.clone()).await;
+    let result = remove_container(socket, config.name.clone()).await;
     match result {
         Ok(()) => println!("Removed pre-existing container {}", config.name.clone()),
         Err(e) => println!("Error removing container: {}", e),
     }
 
-    let result = connection
-        .create_container(Some(options), bollard_config)
-        .await;
+    let result = socket.create_container(Some(options), bollard_config).await;
 
     println!("Created container");
     println!("{:?}", result);
 
-    let result = connection
+    let result = socket
         .start_container::<String>(config.name.as_str(), None)
         .await;
 
@@ -59,25 +57,25 @@ pub async fn run_container(connection: &bollard::Docker, config: Config) {
 }
 
 pub async fn remove_container(
-    connection: &bollard::Docker,
+    socket: &bollard::Docker,
     container: String,
 ) -> Result<(), bollard::errors::Error> {
     let options = RemoveContainerOptions {
         force: true,
         ..Default::default()
     };
-    connection
+    socket
         .remove_container(container.as_str(), Some(options))
         .await
 }
 
-pub async fn print_containers(connection: &bollard::Docker) {
+pub async fn print_containers(socket: &bollard::Docker) {
     let options = ListContainersOptions::<String> {
         all: true,
         ..Default::default()
     };
 
-    let containers = connection
+    let containers = socket
         .list_containers::<String>(Some(options))
         .await
         .unwrap();

@@ -26,23 +26,23 @@ struct Args {
 #[tokio::main]
 async fn main() {
     dotenv::dotenv().ok();
-    let connection = bollard::Docker::connect_with_local_defaults().unwrap();
-    let version = connection.version().await.unwrap();
+    let socket = bollard::Docker::connect_with_local_defaults().unwrap();
+    let version = socket.version().await.unwrap();
     let args = Args::parse();
 
     if args.status {
         commands::system::print_status(version);
     } else if args.list_images {
-        commands::images::print_images(&connection).await;
+        commands::images::print_images(&socket).await;
     } else if let Some(image) = args.pull {
-        commands::images::pull_image(&connection, image).await;
+        commands::images::pull_image(&socket, image).await;
     } else if args.list_containers {
-        commands::containers::print_containers(&connection).await;
+        commands::containers::print_containers(&socket).await;
     } else if let Some(config) = args.run {
         let config = config::load_config_from_file(&config).unwrap();
-        commands::containers::run_container(&connection, config).await;
+        commands::containers::run_container(&socket, config).await;
     } else if let Some(container) = args.remove_container {
-        commands::containers::remove_container(&connection, container)
+        commands::containers::remove_container(&socket, container)
             .await
             .unwrap();
     }
