@@ -6,14 +6,20 @@ mod utils;
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, help = "Print status of the current connection")]
+    #[arg(long, help = "Print status of the current connection")]
     status: bool,
 
-    #[arg(short, long, help = "List all images")]
+    #[arg(long, help = "List all images")]
     list_images: bool,
-
-    #[arg(short, long, help = "Pull an image")]
+    #[arg(long, help = "Pull an image")]
     pull: Option<String>,
+
+    #[arg(long, help = "List all containers")]
+    list_containers: bool,
+    #[arg(long, help = "Run a container")]
+    run: Option<String>,
+    #[arg(long, help = "Remove a container")]
+    remove_container: Option<String>,
 }
 
 #[tokio::main]
@@ -29,5 +35,11 @@ async fn main() {
         commands::images::print_images(connection).await;
     } else if let Some(image) = args.pull {
         commands::images::pull_image(connection, image).await;
+    } else if args.list_containers {
+        commands::containers::print_containers(connection).await;
+    } else if let Some(container) = args.run {
+        commands::containers::run_container(connection, container).await;
+    } else if let Some(container) = args.remove_container {
+        commands::containers::remove_container(connection, container).await;
     }
 }
