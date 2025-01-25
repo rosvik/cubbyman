@@ -37,23 +37,31 @@ pub async fn run_container(socket: &bollard::Docker, config: Config) {
     };
 
     // Attempt to remove container in case it already exists
-    let result = remove_container(socket, config.name.clone()).await;
-    match result {
+    match remove_container(socket, config.name.clone()).await {
         Ok(()) => println!("Removed pre-existing container {}", config.name.clone()),
         Err(e) => println!("Error removing container: {}", e),
     }
 
-    let result = socket.create_container(Some(options), bollard_config).await;
+    match socket.create_container(Some(options), bollard_config).await {
+        Ok(container) => {
+            println!("Created container {}", container.id.dark_cyan());
+            container.warnings.iter().for_each(|warning| {
+                println!("Warning: {}", warning.clone().red());
+            });
+        }
+        Err(e) => println!("Error creating container: {}", e),
+    }
 
-    println!("Created container");
-    println!("{:?}", result);
-
-    let result = socket
+    match socket
         .start_container::<String>(config.name.as_str(), None)
-        .await;
-
-    println!("Started container");
-    println!("{:?}", result);
+        .await
+    {
+        Ok(()) => println!("{}", "Container started".dark_green()),
+        Err(e) => println!(
+            "Error starting container: {}",
+            format!("{:?}", e).dark_red()
+        ),
+    }
 }
 
 pub async fn remove_container(
