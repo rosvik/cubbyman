@@ -50,7 +50,10 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
                 println!("Warning: {}", warning.clone().red());
             });
         }
-        Err(e) => println!("Error creating container: {}", e),
+        Err(e) => {
+            println!("Error creating container: {}", e);
+            return;
+        }
     }
 
     match socket
