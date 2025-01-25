@@ -1,6 +1,7 @@
 use clap::Parser;
 
 mod commands;
+mod config;
 mod utils;
 
 #[derive(Parser, Debug)]
@@ -16,7 +17,7 @@ struct Args {
 
     #[arg(long, help = "List all containers")]
     list_containers: bool,
-    #[arg(long, help = "Run a container")]
+    #[arg(long, help = "Run a container using the specified config file")]
     run: Option<String>,
     #[arg(long, help = "Remove a container")]
     remove_container: Option<String>,
@@ -37,8 +38,9 @@ async fn main() {
         commands::images::pull_image(connection, image).await;
     } else if args.list_containers {
         commands::containers::print_containers(connection).await;
-    } else if let Some(container) = args.run {
-        commands::containers::run_container(connection, container).await;
+    } else if let Some(config) = args.run {
+        let config = config::load_config_from_file(&config).unwrap();
+        commands::containers::run_container(connection, config).await;
     } else if let Some(container) = args.remove_container {
         commands::containers::remove_container(connection, container).await;
     }

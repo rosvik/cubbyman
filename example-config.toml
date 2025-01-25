@@ -1,0 +1,9 @@
+name = "container-cubby"
+image = "cubby.no/rosvik/container-cubby:main"
+env = [
+  "USERNAME=admin",
+  "PASSWORD=hunter2",
+  "PORT=8602",
+  "HOST=0.0.0.0"
+]
+ports = ["8602:8602"]

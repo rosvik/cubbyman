@@ -1,37 +1,34 @@
-use crate::utils::*;
+use crate::{config::Config, utils::*};
 use bollard::{
-    container::{Config, CreateContainerOptions, ListContainersOptions, RemoveContainerOptions},
+    container::{CreateContainerOptions, ListContainersOptions, RemoveContainerOptions},
     secret::{HostConfig, PortBinding},
 };
 use crossterm::style::Stylize;
-use std::{collections::HashMap, default::Default};
+use std::default::Default;
 
-pub async fn run_container(connection: bollard::Docker, image: String) {
-    println!("Running image {}", image);
-
-    let name = "container-cubby".to_string();
+pub async fn run_container(connection: bollard::Docker, config: Config) {
+    println!("Running image {} ({})", config.image, config.name);
 
     let options = CreateContainerOptions::<String> {
-        name: name.clone(),
+        name: config.name.clone(),
         ..Default::default()
     };
-
-    let port_bindings = HashMap::from([(
-        "8602/tcp".to_string(),
-        Some(vec![PortBinding {
-            host_ip: Some("127.0.0.1".to_string()),
-            host_port: Some("8602".to_string()),
-        }]),
-    )]);
-
-    let config = Config::<String> {
-        image: Some(image),
-        env: Some(vec![
-            "USERNAME=admin".to_string(),
-            "PASSWORD=hunter2".to_string(),
-            "PORT=8602".to_string(),
-            "HOST=0.0.0.0".to_string(),
-        ]),
+    let port_bindings = config
+        .ports
+        .iter()
+        .map(|port| {
+            (
+                format!("{}/tcp", port.container),
+                Some(vec![PortBinding {
+                    host_ip: Some("127.0.0.1".to_string()),
+                    host_port: Some(port.host.to_string()),
+                }]),
+            )
+        })
+        .collect();
+    let bollard_config = bollard::container::Config::<String> {
+        image: Some(config.image),
+        env: Some(config.env),
         host_config: Some(HostConfig {
             port_bindings: Some(port_bindings),
             ..Default::default()
@@ -39,13 +36,15 @@ pub async fn run_container(connection: bollard::Docker, image: String) {
         ..Default::default()
     };
 
-    let result = connection.create_container(Some(options), config).await;
+    let result = connection
+        .create_container(Some(options), bollard_config)
+        .await;
 
     println!("Created container");
     println!("{:?}", result);
 
     let result = connection
-        .start_container::<String>(name.as_str(), None)
+        .start_container::<String>(config.name.as_str(), None)
         .await;
 
     println!("Started container");
