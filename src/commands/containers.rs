@@ -6,7 +6,7 @@ use bollard::{
 use crossterm::style::Stylize;
 use std::default::Default;
 
-pub async fn run_container(connection: bollard::Docker, config: Config) {
+pub async fn run_container(connection: &bollard::Docker, config: Config) {
     println!("Running image {} ({})", config.image, config.name);
 
     let options = CreateContainerOptions::<String> {
@@ -36,6 +36,13 @@ pub async fn run_container(connection: bollard::Docker, config: Config) {
         ..Default::default()
     };
 
+    // Attempt to remove container in case it already exists
+    let result = remove_container(connection, config.name.clone()).await;
+    match result {
+        Ok(()) => println!("Removed pre-existing container {}", config.name.clone()),
+        Err(e) => println!("Error removing container: {}", e),
+    }
+
     let result = connection
         .create_container(Some(options), bollard_config)
         .await;
@@ -51,22 +58,20 @@ pub async fn run_container(connection: bollard::Docker, config: Config) {
     println!("{:?}", result);
 }
 
-pub async fn remove_container(connection: bollard::Docker, container: String) {
-    println!("Removing container {}", container);
-
+pub async fn remove_container(
+    connection: &bollard::Docker,
+    container: String,
+) -> Result<(), bollard::errors::Error> {
     let options = RemoveContainerOptions {
         force: true,
         ..Default::default()
     };
-
-    let result = connection
+    connection
         .remove_container(container.as_str(), Some(options))
-        .await;
-    println!("Removed container");
-    println!("{:?}", result);
+        .await
 }
 
-pub async fn print_containers(connection: bollard::Docker) {
+pub async fn print_containers(connection: &bollard::Docker) {
     let options = ListContainersOptions::<String> {
         all: true,
         ..Default::default()

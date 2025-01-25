@@ -4,7 +4,7 @@ use futures::StreamExt;
 use std::default::Default;
 use std::env;
 
-pub async fn print_images(connection: bollard::Docker) {
+pub async fn print_images(connection: &bollard::Docker) {
     let images = connection.list_images::<String>(None).await.unwrap();
     images.iter().for_each(|image| {
         println!("ID: {}", image.id);
@@ -25,7 +25,7 @@ pub async fn print_images(connection: bollard::Docker) {
     });
 }
 
-pub async fn pull_image(connection: bollard::Docker, image: String) {
+pub async fn pull_image(connection: &bollard::Docker, image: String) {
     println!("Pulling image {}", image);
 
     let credentials = get_credentials();
