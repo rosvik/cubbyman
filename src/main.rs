@@ -2,6 +2,7 @@ use clap::Parser;
 
 mod commands;
 mod config;
+mod serve;
 mod utils;
 
 #[derive(Parser, Debug)]
@@ -9,8 +10,13 @@ mod utils;
 struct Args {
     #[arg(long, help = "Print status of the current connection")]
     status: bool,
-    #[arg(long, help = "Reload all containers")]
+    #[arg(
+        long,
+        help = "Fetch new images and reload containers using the specified config file"
+    )]
     reload: Option<String>,
+    #[arg(long, help = "Serve webhooks")]
+    serve: Option<String>,
 
     #[arg(long, help = "List all images")]
     list_images: bool,
@@ -52,5 +58,8 @@ async fn main() {
     } else if let Some(config_path) = args.reload {
         let config = config::load_config_from_file(&config_path).unwrap();
         commands::system::reload_all(&socket, &config).await;
+    } else if let Some(config_path) = args.serve {
+        let config = config::load_config_from_file(&config_path).unwrap();
+        serve::serve(socket, config).await;
     }
 }
