@@ -9,6 +9,8 @@ mod utils;
 struct Args {
     #[arg(long, help = "Print status of the current connection")]
     status: bool,
+    #[arg(long, help = "Reload all containers")]
+    reload: Option<String>,
 
     #[arg(long, help = "List all images")]
     list_images: bool,
@@ -38,8 +40,8 @@ async fn main() {
         commands::images::pull_image(&socket, image).await;
     } else if args.list_containers {
         commands::containers::print_containers(&socket).await;
-    } else if let Some(config) = args.run {
-        let config = config::load_config_from_file(&config).unwrap();
+    } else if let Some(config_path) = args.run {
+        let config = config::load_config_from_file(&config_path).unwrap();
         for container in config.containers {
             commands::containers::run_container(&socket, container).await;
         }
@@ -47,5 +49,8 @@ async fn main() {
         commands::containers::remove_container(&socket, container)
             .await
             .unwrap();
+    } else if let Some(config_path) = args.reload {
+        let config = config::load_config_from_file(&config_path).unwrap();
+        commands::system::reload_all(&socket, &config).await;
     }
 }

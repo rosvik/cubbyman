@@ -1,3 +1,7 @@
+use crate::{
+    commands::{containers, images},
+    config::Config,
+};
 use crossterm::style::Stylize;
 
 pub fn print_status(version: bollard::system::Version) {
@@ -49,4 +53,13 @@ pub fn print_status(version: bollard::system::Version) {
             }
         });
     });
+}
+
+pub async fn reload_all(socket: &bollard::Docker, config: &Config) {
+    for container in config.containers.iter() {
+        images::pull_image(socket, container.image.clone()).await;
+        containers::run_container(socket, container.clone()).await;
+    }
+    println!("Reloaded all containers");
+    containers::print_containers(socket).await;
 }
