@@ -17,6 +17,7 @@ struct AppState {
 
 pub async fn serve(socket: bollard::Docker, config: Config) {
     let state = AppState { config, socket };
+    let auth = middleware::from_fn_with_state(state.clone(), basic_authenticate);
     let app = Router::new()
         .route(
             "/",
@@ -24,18 +25,9 @@ pub async fn serve(socket: bollard::Docker, config: Config) {
         )
         .route(
             "/v1",
-            get(|| async { "Authenticated" }).route_layer(middleware::from_fn_with_state(
-                state.clone(),
-                basic_authenticate,
-            )),
+            get(|| async { "Authenticated" }).route_layer(auth.clone()),
         )
-        .route(
-            "/v1/reload",
-            post(reload).route_layer(middleware::from_fn_with_state(
-                state.clone(),
-                basic_authenticate,
-            )),
-        )
+        .route("/v1/reload", post(reload).route_layer(auth.clone()))
         .with_state(state.clone());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8600").await.unwrap();
