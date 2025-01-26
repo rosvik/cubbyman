@@ -1,6 +1,7 @@
-use crate::{commands, config::Config};
+use crate::{commands, config::Config, middleware::basic_authenticate};
 use axum::{
     extract::State,
+    middleware,
     response::IntoResponse,
     routing::{get, post},
     Router,
@@ -21,10 +22,25 @@ pub async fn serve(socket: bollard::Docker, config: Config) {
             "/",
             get(|| async { format!("{CRATE_NAME} v{CRATE_VERSION}") }),
         )
-        .route("/v1/reload", post(reload))
-        .with_state(state);
+        .route(
+            "/v1",
+            get(|| async { "Authenticated" }).route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                basic_authenticate,
+            )),
+        )
+        .route(
+            "/v1/reload",
+            post(reload).route_layer(middleware::from_fn_with_state(
+                state.clone(),
+                basic_authenticate,
+            )),
+        )
+        .with_state(state.clone());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:8600").await.unwrap();
+
+    println!("Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
 }
 

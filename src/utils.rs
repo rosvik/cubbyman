@@ -30,3 +30,10 @@ pub fn format_port(port: &Port) -> String {
         port.public_port.unwrap_or_default()
     )
 }
+
+use base64::{engine::general_purpose, Engine as _};
+pub fn decode_base64(input: String) -> Result<String, Box<dyn std::error::Error>> {
+    let bytes = general_purpose::STANDARD.decode(input)?;
+    let utf8 = std::str::from_utf8(&bytes)?;
+    Ok(utf8.to_string())
+}

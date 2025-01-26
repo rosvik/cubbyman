@@ -2,6 +2,7 @@ use clap::Parser;
 
 mod commands;
 mod config;
+mod middleware;
 mod serve;
 mod utils;
 
