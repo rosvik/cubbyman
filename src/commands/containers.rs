@@ -4,7 +4,7 @@ use bollard::{
     secret::{HostConfig, MountTypeEnum, PortBinding},
 };
 use crossterm::style::Stylize;
-use std::default::Default;
+use std::{collections::HashMap, default::Default};
 
 pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
     println!("Running image {} ({})", config.image, config.name);
@@ -15,18 +15,21 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
     };
     let port_bindings = config
         .ports
+        .clone()
         .unwrap_or_default()
         .iter()
         .map(|port| {
             (
                 format!("{}/tcp", port.container),
                 Some(vec![PortBinding {
-                    host_ip: Some("127.0.0.1".to_string()),
+                    host_ip: Some("0.0.0.0".to_string()),
                     host_port: Some(port.host.to_string()),
                 }]),
             )
         })
         .collect();
+
+    println!("{:?}", port_bindings);
     let mounts: Vec<bollard::secret::Mount> = config
         .mounts
         .unwrap_or_default()
@@ -44,10 +47,17 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
         mounts: Some(mounts),
         ..Default::default()
     };
+    let empty = HashMap::<(), ()>::new();
+    let mut exposed_ports = HashMap::new();
+    for port in config.ports.unwrap_or_default() {
+        let exposed_port = format!("{}/tcp", port.container);
+        exposed_ports.insert(exposed_port, empty.clone());
+    }
     let bollard_config = bollard::container::Config::<String> {
         image: Some(config.image),
         env: config.env,
         host_config: Some(host_config),
+        exposed_ports: Some(exposed_ports),
         ..Default::default()
     };
 
