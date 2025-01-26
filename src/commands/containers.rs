@@ -28,8 +28,6 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
             )
         })
         .collect();
-
-    println!("{:?}", port_bindings);
     let mounts: Vec<bollard::secret::Mount> = config
         .mounts
         .unwrap_or_default()
