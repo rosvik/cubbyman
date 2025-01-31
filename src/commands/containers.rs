@@ -91,14 +91,14 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
 
 pub async fn remove_container(
     socket: &bollard::Docker,
-    container: String,
+    container_name: String,
 ) -> Result<(), bollard::errors::Error> {
     let options = RemoveContainerOptions {
         force: true,
         ..Default::default()
     };
     socket
-        .remove_container(container.as_str(), Some(options))
+        .remove_container(container_name.as_str(), Some(options))
         .await
 }
 

@@ -26,8 +26,8 @@ struct Args {
         help = "Setup and run containers using the specified config file"
     )]
     run: Option<String>,
-    #[arg(long, help = "Remove a container")]
-    remove_container: Option<String>,
+    #[arg(long, help = "Destroy containers listed in the specified config file")]
+    destroy: Option<String>,
 }
 
 #[tokio::main]
@@ -52,10 +52,13 @@ async fn main() {
     } else if let Some(config_path) = args.run {
         let config = config::load_config_from_file(&config_path).unwrap();
         commands::system::reload_all(&socket, &config).await;
-    } else if let Some(container) = args.remove_container {
-        commands::containers::remove_container(&socket, container)
-            .await
-            .unwrap();
+    } else if let Some(config_path) = args.destroy {
+        let config = config::load_config_from_file(&config_path).unwrap();
+        for container in config.containers.iter() {
+            commands::containers::remove_container(&socket, container.name.clone())
+                .await
+                .unwrap();
+        }
     }
 
     if args.list_images {
