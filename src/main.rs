@@ -19,8 +19,6 @@ struct Args {
     #[arg(long, help = "List all containers")]
     list_containers: bool,
 
-    #[arg(long, help = "Pull an image")]
-    pull: Option<String>,
     #[arg(
         long,
         help = "Setup and run containers using the specified config file"
@@ -47,9 +45,7 @@ async fn main() {
         return;
     }
 
-    if let Some(image) = args.pull {
-        commands::images::pull_image(&socket, image).await;
-    } else if let Some(config_path) = args.run {
+    if let Some(config_path) = args.run {
         let config = config::load_config_from_file(&config_path).unwrap();
         commands::system::reload_all(&socket, &config).await;
     } else if let Some(config_path) = args.destroy {
