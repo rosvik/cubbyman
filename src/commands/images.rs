@@ -34,17 +34,22 @@ pub async fn pull_image(socket: &bollard::Docker, image: String) {
         ..Default::default()
     };
 
-    let mut result = socket.create_image(Some(options), None, Some(credentials));
+    let mut result = socket.create_image(Some(options), None, credentials);
 
     while let Some(Ok(create_image_info)) = result.next().await {
         println!("{:?}", create_image_info);
     }
 }
 
-fn get_credentials() -> DockerCredentials {
-    DockerCredentials {
-        username: Some(env::var("REGISTRY_USERNAME").unwrap()),
-        password: Some(env::var("REGISTRY_PASSWORD").unwrap()),
-        ..Default::default()
+fn get_credentials() -> Option<DockerCredentials> {
+    if let Ok(username) = env::var("REGISTRY_USERNAME") {
+        if let Ok(password) = env::var("REGISTRY_PASSWORD") {
+            return Some(DockerCredentials {
+                username: Some(username),
+                password: Some(password),
+                ..Default::default()
+            });
+        }
     }
+    None
 }
