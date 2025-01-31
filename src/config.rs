@@ -1,5 +1,11 @@
+use clio::Input;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::{error::Error, fs::File, io::Read};
+use std::{
+    error::Error,
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
@@ -80,12 +86,47 @@ where
     }))
 }
 
-pub fn load_config_from_file(path: &str) -> Result<Config, Box<dyn Error>> {
+pub fn load_config(cli_input: Option<Input>) -> Result<Config, Box<dyn Error>> {
     let mut buffer = String::new();
-    let _ = File::open(path)?.read_to_string(&mut buffer)?;
+
+    if let Some(mut file) = cli_input {
+        let _ = file.read_to_string(&mut buffer)?;
+    } else if let Some(path) = get_default_config_path() {
+        let mut file = File::open(path)?;
+        let _ = file.read_to_string(&mut buffer)?;
+    }
     load_config_from_string(&buffer)
 }
-pub fn load_config_from_string(config_string: &str) -> Result<Config, Box<dyn Error>> {
+fn load_config_from_string(config_string: &str) -> Result<Config, Box<dyn Error>> {
     let config: Config = toml::from_str(config_string)?;
     Ok(config)
+}
+
+/// Will look for a `cubbyfile.toml` in the following locations, in this
+/// prioritized order:
+/// 1. The user provided path
+/// 2. `cubbyfile.toml` in the current working directory
+/// 3. `.cubbyfile.toml` in the user's home directory
+fn get_default_config_path() -> Option<String> {
+    let path = Path::new("cubbyfile.toml");
+    if path.exists() {
+        println!(
+            "Using cubbyfile.toml in current directory: {}",
+            path.to_string_lossy()
+        );
+        return Some(path.to_string_lossy().to_string());
+    }
+
+    let mut path = PathBuf::from(std::env::var("HOME").unwrap());
+    path.push(".cubbyfile.toml");
+    if path.exists() {
+        println!(
+            "Using .cubbyfile.toml in home directory: {}",
+            path.to_string_lossy()
+        );
+        return Some(path.to_string_lossy().to_string());
+    }
+
+    println!("No configuration file found");
+    None
 }

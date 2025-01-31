@@ -1,4 +1,5 @@
 use clap::Parser;
+use clio::Input;
 
 mod commands;
 mod config;
@@ -12,7 +13,7 @@ struct Args {
     #[arg(long, help = "Print status of the current connection")]
     status: bool,
     #[arg(long, help = "Serve webhooks")]
-    serve: Option<String>,
+    serve: Option<Option<Input>>,
 
     #[arg(long, help = "List all images")]
     list_images: bool,
@@ -23,9 +24,9 @@ struct Args {
         long,
         help = "Setup and run containers using the specified config file"
     )]
-    run: Option<String>,
+    apply: Option<Option<Input>>,
     #[arg(long, help = "Destroy containers listed in the specified config file")]
-    destroy: Option<String>,
+    destroy: Option<Option<Input>>,
 }
 
 #[tokio::main]
@@ -39,17 +40,17 @@ async fn main() {
         commands::system::print_status(version);
         return;
     }
-    if let Some(config_path) = args.serve {
-        let config = config::load_config_from_file(&config_path).unwrap();
+    if let Some(input_file) = args.serve {
+        let config = config::load_config(input_file).unwrap();
         serve::serve(socket, config).await;
         return;
     }
 
-    if let Some(config_path) = args.run {
-        let config = config::load_config_from_file(&config_path).unwrap();
+    if let Some(input_file) = args.apply {
+        let config = config::load_config(input_file).unwrap();
         commands::system::reload_all(&socket, &config).await;
-    } else if let Some(config_path) = args.destroy {
-        let config = config::load_config_from_file(&config_path).unwrap();
+    } else if let Some(input_file) = args.destroy {
+        let config = config::load_config(input_file).unwrap();
         for container in config.containers.iter() {
             commands::containers::remove_container(&socket, container.name.clone())
                 .await
