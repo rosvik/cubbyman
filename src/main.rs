@@ -27,6 +27,12 @@ struct Args {
     apply: Option<Option<Input>>,
     #[arg(long, help = "Destroy containers listed in the specified config file")]
     destroy: Option<Option<Input>>,
+
+    #[arg(
+        long,
+        help = "Print the contents of the current, or provided config file"
+    )]
+    print_config: Option<Option<Input>>,
 }
 
 #[tokio::main]
@@ -43,6 +49,11 @@ async fn main() {
     if let Some(input_file) = args.serve {
         let config = config::load_config(input_file).unwrap();
         serve::serve(socket, config).await;
+        return;
+    }
+    if let Some(input_file) = args.print_config {
+        let config = config::load_config(input_file).unwrap();
+        println!("{}", toml::to_string(&config).unwrap());
         return;
     }
 
