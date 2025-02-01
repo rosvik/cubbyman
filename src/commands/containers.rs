@@ -1,7 +1,8 @@
 use crate::{config::ContainerConfig, utils::*};
 use bollard::{
     container::{CreateContainerOptions, ListContainersOptions, RemoveContainerOptions},
-    secret::{HostConfig, MountTypeEnum, PortBinding},
+    network::ConnectNetworkOptions,
+    secret::{EndpointSettings, HostConfig, MountTypeEnum, PortBinding},
 };
 use crossterm::style::Stylize;
 use std::{collections::HashMap, default::Default};
@@ -76,6 +77,22 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
             return;
         }
     }
+
+    // https://docs.docker.com/reference/cli/docker/network/connect/
+    let network_config = ConnectNetworkOptions {
+        container: config.name.clone(),
+        endpoint_config: EndpointSettings {
+            ip_address: config.bridge_ip,
+            ..Default::default()
+        },
+    };
+    match socket
+        .connect_network::<String>("bridge", network_config)
+        .await
+    {
+        Ok(()) => println!("Connected to network"),
+        Err(e) => println!("Error connecting to network: {}", e),
+    };
 
     match socket
         .start_container::<String>(config.name.as_str(), None)

@@ -31,6 +31,9 @@ pub struct ContainerConfig {
     #[serde(default = "default_host_ip")]
     pub host_ip: String,
 
+    /// The IP this container should have on the bridge network.
+    pub bridge_ip: Option<String>,
+
     /// The local directories to bind to the container. Format is
     /// `host_path:container_path`.
     #[serde(default, deserialize_with = "deserialize_mounts")]
