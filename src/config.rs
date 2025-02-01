@@ -79,11 +79,19 @@ where
         mounts
             .iter()
             .map(|m| Mount {
-                host_path: m.split(':').next().unwrap().to_string(),
+                host_path: to_absolute_path(m.split(':').next().unwrap()),
                 container_path: m.split(':').last().unwrap().to_string(),
             })
             .collect()
     }))
+}
+fn to_absolute_path(path: &str) -> String {
+    let mut path = PathBuf::from(path);
+    if !path.is_absolute() {
+        path = std::env::current_dir().unwrap().join(path);
+        path = path.canonicalize().unwrap();
+    }
+    path.to_string_lossy().to_string()
 }
 
 pub fn load_config(cli_input: Option<Input>) -> Result<Config, Box<dyn Error>> {
