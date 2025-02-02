@@ -41,6 +41,6 @@ pub async fn serve(socket: bollard::Docker, config: Config) {
 
 async fn reload(State(state): State<AppState>) -> impl IntoResponse {
     println!("Reloading");
-    commands::system::reload_all(&state.socket, &state.config).await;
+    commands::system::apply(&state.socket, &state.config).await;
     "Reloaded"
 }

@@ -9,7 +9,13 @@ use std::{
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
+    pub volumes: Vec<VolumeConfig>,
     pub containers: Vec<ContainerConfig>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct VolumeConfig {
+    pub name: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

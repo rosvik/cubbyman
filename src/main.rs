@@ -59,7 +59,7 @@ async fn main() {
 
     if let Some(input_file) = args.apply {
         let config = config::load_config(input_file).unwrap();
-        commands::system::reload_all(&socket, &config).await;
+        commands::system::apply(&socket, &config).await;
     } else if let Some(input_file) = args.destroy {
         let config = config::load_config(input_file).unwrap();
         for container in config.containers.iter() {

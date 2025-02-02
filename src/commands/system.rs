@@ -1,5 +1,5 @@
 use crate::{
-    commands::{containers, images},
+    commands::{containers, images, volumes},
     config::Config,
 };
 use crossterm::style::Stylize;
@@ -55,7 +55,10 @@ pub fn print_status(version: bollard::system::Version) {
     });
 }
 
-pub async fn reload_all(socket: &bollard::Docker, config: &Config) {
+pub async fn apply(socket: &bollard::Docker, config: &Config) {
+    for volume in config.volumes.iter() {
+        volumes::create_volume(socket, volume.name.clone()).await;
+    }
     for container in config.containers.iter() {
         images::pull_image(socket, container.image.clone()).await;
         containers::run_container(socket, container.clone()).await;
