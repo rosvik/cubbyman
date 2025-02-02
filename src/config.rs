@@ -44,6 +44,11 @@ pub struct ContainerConfig {
     /// `host_path:container_path`.
     #[serde(default, deserialize_with = "deserialize_mounts")]
     pub mounts: Option<Vec<Mount>>,
+
+    /// The volumes to bind to the container. Format is
+    /// `volume_name:container_path`.
+    #[serde(default, deserialize_with = "deserialize_volumes")]
+    pub volumes: Option<Vec<Volume>>,
 }
 
 fn default_host_ip() -> String {
@@ -101,6 +106,27 @@ fn to_absolute_path(path: &str) -> String {
         path = path.canonicalize().unwrap();
     }
     path.to_string_lossy().to_string()
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Volume {
+    pub name: String,
+    pub container_path: String,
+}
+fn deserialize_volumes<'de, D>(deserializer: D) -> Result<Option<Vec<Volume>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let volumes: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
+    Ok(volumes.map(|volumes| {
+        volumes
+            .iter()
+            .map(|v| Volume {
+                name: v.split(':').next().unwrap().to_string(),
+                container_path: v.split(':').last().unwrap().to_string(),
+            })
+            .collect()
+    }))
 }
 
 pub fn load_config(cli_input: Option<Input>) -> Result<Config, Box<dyn Error>> {

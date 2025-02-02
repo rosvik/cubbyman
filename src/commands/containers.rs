@@ -29,7 +29,7 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
             )
         })
         .collect();
-    let mounts: Vec<bollard::secret::Mount> = config
+    let mut mounts: Vec<bollard::secret::Mount> = config
         .mounts
         .unwrap_or_default()
         .iter()
@@ -40,6 +40,18 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
             ..Default::default()
         })
         .collect();
+    config
+        .volumes
+        .unwrap_or_default()
+        .iter()
+        .for_each(|volume| {
+            mounts.push(bollard::secret::Mount {
+                source: Some(volume.name.clone()),
+                target: Some(volume.container_path.clone()),
+                typ: Some(MountTypeEnum::VOLUME),
+                ..Default::default()
+            })
+        });
 
     let host_config = HostConfig {
         port_bindings: Some(port_bindings),
