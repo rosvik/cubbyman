@@ -36,9 +36,7 @@ pub async fn pull_image(socket: &bollard::Docker, image: String) {
 
     let mut result = socket.create_image(Some(options), None, credentials);
 
-    while let Some(Ok(create_image_info)) = result.next().await {
-        println!("{:?}", create_image_info);
-    }
+    while let Some(Ok(_)) = result.next().await {}
 }
 
 fn get_credentials() -> Option<DockerCredentials> {
