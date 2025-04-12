@@ -22,6 +22,11 @@ mounts = [
   "/tmp/data:/data"
 ]
 
+# Docker volumes to mount into the container. Format is `name:container_path`.
+volumes = [
+  "myvolume:/data-2"
+]
+
 # Ports to expose on the host machine. Format is `host_port:container_port`.
 ports = ["8602:8602"]
 

@@ -21,6 +21,8 @@ struct Args {
     list_containers: bool,
     #[arg(long, help = "List all networks")]
     list_networks: bool,
+    #[arg(long, help = "List all volumes")]
+    list_volumes: bool,
 
     #[arg(
         long,
@@ -82,5 +84,8 @@ async fn main() {
     }
     if args.list_networks {
         commands::networks::list_networks(&socket).await;
+    }
+    if args.list_volumes {
+        commands::volumes::list_volumes(&socket).await;
     }
 }
