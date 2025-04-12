@@ -27,21 +27,15 @@ pub struct ContainerConfig {
     #[serde(default, deserialize_with = "deserialize_ports")]
     pub ports: Option<Vec<Port>>,
 
-    /// The IP address to bind the container to (default: 127.0.0.1)
-    #[serde(default = "default_host_ip")]
-    pub host_ip: String,
-
-    /// The IP this container should have on the bridge network.
-    pub bridge_ip: Option<String>,
+    /// Network name or mode. Modes are `bridge`, `host`,
+    /// `none`, and `container:<name|id>`. Any other value
+    /// will be used to set up a custom bridge network.
+    pub network: Option<String>,
 
     /// The local directories to bind to the container. Format is
     /// `host_path:container_path`.
     #[serde(default, deserialize_with = "deserialize_mounts")]
     pub mounts: Option<Vec<Mount>>,
-}
-
-fn default_host_ip() -> String {
-    "127.0.0.1".to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

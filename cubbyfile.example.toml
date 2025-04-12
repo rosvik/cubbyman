@@ -25,6 +25,11 @@ mounts = [
 # Ports to expose on the host machine. Format is `host_port:container_port`.
 ports = ["8602:8602"]
 
+# Network name or mode. Modes are `bridge`, `host`, `none`,
+# and `container:<name|id>`. Any other value will be used to
+# set up a custom bridge network.
+network = "cubby"
+
 # Several containers can be set up with the same config file.
 [[containers]]
 name = "hello"

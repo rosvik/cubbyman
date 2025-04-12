@@ -19,6 +19,8 @@ struct Args {
     list_images: bool,
     #[arg(long, help = "List all containers")]
     list_containers: bool,
+    #[arg(long, help = "List all networks")]
+    list_networks: bool,
 
     #[arg(
         long,
@@ -66,6 +68,9 @@ async fn main() {
             commands::containers::remove_container(&socket, container.name.clone())
                 .await
                 .unwrap();
+            if let Some(network) = &container.network {
+                commands::networks::remove_network(&socket, network).await;
+            }
         }
     }
 
@@ -74,5 +79,8 @@ async fn main() {
     }
     if args.list_containers {
         commands::containers::print_containers(&socket).await;
+    }
+    if args.list_networks {
+        commands::networks::list_networks(&socket).await;
     }
 }
