@@ -133,26 +133,12 @@ fn load_config_from_string(config_string: &str) -> Result<Config, Box<dyn Error>
     Ok(config)
 }
 
-/// Will look for a `cubbyfile.toml` in the following locations, in this
-/// prioritized order:
-/// 1. The user provided path
-/// 2. `cubbyfile.toml` in the current working directory
-/// 3. `.cubbyfile.toml` in the user's home directory
+/// Will look for a `cubbyfile.toml` in the current directory
 fn get_default_config_path() -> Option<String> {
     let path = Path::new("cubbyfile.toml");
     if path.exists() {
         println!(
             "Using cubbyfile.toml in current directory: {}",
-            path.to_string_lossy()
-        );
-        return Some(path.to_string_lossy().to_string());
-    }
-
-    let mut path = PathBuf::from(std::env::var("HOME").unwrap());
-    path.push(".cubbyfile.toml");
-    if path.exists() {
-        println!(
-            "Using .cubbyfile.toml in home directory: {}",
             path.to_string_lossy()
         );
         return Some(path.to_string_lossy().to_string());
