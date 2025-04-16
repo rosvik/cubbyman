@@ -91,7 +91,9 @@ fn to_absolute_path(path: &str) -> String {
     let mut path = PathBuf::from(path);
     if !path.is_absolute() {
         path = std::env::current_dir().unwrap().join(path);
-        path = path.canonicalize().unwrap();
+        path = path.canonicalize().unwrap_or_else(|e| {
+            panic!("Failed to resolve path '{}': {}", path.to_string_lossy(), e)
+        });
     }
     path.to_string_lossy().to_string()
 }
