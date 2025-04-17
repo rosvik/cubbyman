@@ -16,3 +16,4 @@ serde = "1.0.217"
 axum = "0.8.1"
 base64 = "0.22.1"
 clio = {version = "0.3.5", features = ["clap-parse"]}
+git2 = "0.18.3"
