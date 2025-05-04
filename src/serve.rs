@@ -17,26 +17,26 @@ struct AppState {
 
 pub async fn serve(socket: bollard::Docker, config: Config) {
     let state = AppState { config, socket };
-    let auth = middleware::from_fn_with_state(state.clone(), basic_authenticate);
     let app = Router::new()
         .route(
-            "/cubbyman",
+            "/",
             get(|| async { format!("{CRATE_NAME} v{CRATE_VERSION}") }),
         )
-        .route(
-            "/cubbyman/v1",
-            get(|| async { "Authenticated" }).route_layer(auth.clone()),
-        )
-        .route(
-            "/cubbyman/v1/reload",
-            post(reload).route_layer(auth.clone()),
-        )
-        .with_state(state.clone());
+        .nest_service("/api/cubbyman/v1", api_router(state));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8600").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8645").await.unwrap();
 
     println!("Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
+}
+
+fn api_router(state: AppState) -> Router {
+    let auth = middleware::from_fn_with_state(state.clone(), basic_authenticate);
+    Router::new()
+        .layer(auth)
+        .route("/", get(|| async { "Authenticated" }))
+        .route("/reload", post(reload))
+        .with_state(state)
 }
 
 async fn reload(State(state): State<AppState>) -> impl IntoResponse {
