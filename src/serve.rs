@@ -26,7 +26,7 @@ pub async fn serve(socket: bollard::Docker, config_arg: Input) {
         )
         .nest_service("/api/cubbyman/v1", api_router(state));
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:8645").await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:8600").await.unwrap();
 
     println!("Listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
