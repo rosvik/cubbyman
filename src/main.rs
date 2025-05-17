@@ -50,22 +50,22 @@ async fn main() {
         commands::system::print_status(version);
         return;
     }
-    if let Some(input_file) = args.serve {
-        let config = config::load_config(input_file).unwrap();
+    if let Some(config_arg) = args.serve {
+        let config = config::load_config(config_arg).unwrap();
         serve::serve(socket, config).await;
         return;
     }
-    if let Some(input_file) = args.print_config {
-        let config = config::load_config(input_file).unwrap();
+    if let Some(config_arg) = args.print_config {
+        let config = config::load_config(config_arg).unwrap();
         println!("{}", toml::to_string(&config).unwrap());
         return;
     }
 
-    if let Some(input_file) = args.apply {
-        let config = config::load_config(input_file).unwrap();
+    if let Some(config_arg) = args.apply {
+        let config = config::load_config(config_arg).unwrap();
         commands::system::reload_all(&socket, &config).await;
-    } else if let Some(input_file) = args.destroy {
-        let config = config::load_config(input_file).unwrap();
+    } else if let Some(config_arg) = args.destroy {
+        let config = config::load_config(config_arg).unwrap();
         for container in config.containers.iter() {
             commands::containers::remove_container(&socket, container.name.clone())
                 .await
