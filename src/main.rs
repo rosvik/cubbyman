@@ -51,8 +51,7 @@ async fn main() {
         return;
     }
     if let Some(config_arg) = args.serve {
-        let config = config::load_config(config_arg).unwrap();
-        serve::serve(socket, config).await;
+        serve::serve(socket, config_arg.expect("No config file provided")).await;
         return;
     }
     if let Some(config_arg) = args.print_config {

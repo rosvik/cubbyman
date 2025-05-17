@@ -1,4 +1,4 @@
-use crate::{commands, config::Config, middleware::basic_authenticate};
+use crate::{commands, config, middleware::basic_authenticate};
 use axum::{
     extract::State,
     middleware,
@@ -6,17 +6,19 @@ use axum::{
     routing::{get, post},
     Router,
 };
+use clio::Input;
+
 const CRATE_NAME: &str = env!("CARGO_PKG_NAME");
 const CRATE_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Clone)]
 struct AppState {
-    config: Config,
+    config_arg: Input,
     socket: bollard::Docker,
 }
 
-pub async fn serve(socket: bollard::Docker, config: Config) {
-    let state = AppState { config, socket };
+pub async fn serve(socket: bollard::Docker, config_arg: Input) {
+    let state = AppState { config_arg, socket };
     let app = Router::new()
         .route(
             "/",
@@ -41,6 +43,13 @@ fn api_router(state: AppState) -> Router {
 
 async fn reload(State(state): State<AppState>) -> impl IntoResponse {
     println!("Reloading");
-    commands::system::reload_all(&state.socket, &state.config).await;
-    "Reloaded"
+    let config = match config::load_config(Some(state.config_arg)) {
+        Ok(config) => config,
+        Err(e) => {
+            println!("Unable to load config file: {}", e);
+            return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response();
+        }
+    };
+    commands::system::reload_all(&state.socket, &config).await;
+    (axum::http::StatusCode::OK, "Reloaded").into_response()
 }
