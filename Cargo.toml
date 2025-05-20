@@ -2,6 +2,9 @@
 name = "cubbyman"
 version = "0.1.0"
 edition = "2021"
+license = ""
+authors = ["Johannes Røsvik <j.rosvik@gmail.com>"]
+description = "A tool for managing Docker containers."
 
 [dependencies]
 tokio = { version = "1", features = ["full"] }
