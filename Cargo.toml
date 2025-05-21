@@ -19,3 +19,15 @@ serde = "1.0.217"
 axum = "0.8.1"
 base64 = "0.22.1"
 clio = {version = "0.3.5", features = ["clap-parse"]}
+
+# https://github.com/kornelski/cargo-deb#configuration
+[package.metadata.deb]
+depends = "systemd"
+section = "utils"
+priority = "optional"
+assets = [
+	["target/release/cubbyman", "usr/local/bin/", "755"],
+	["config/cubbyfile.toml", "etc/cubbyman/cubbyfile.toml", "644"],
+	["systemd/cubbyman.service", "etc/systemd/system/cubbyman.service", "644"]
+]
+maintainer-scripts = "scripts/"

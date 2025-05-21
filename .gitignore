@@ -3,3 +3,6 @@ target/
 .env
 config.toml
 cubbyfile.toml
+
+!config/.env
+!config/cubbyfile.toml

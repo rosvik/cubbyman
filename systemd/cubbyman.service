@@ -1,0 +1,18 @@
+[Unit]
+Description=cubbyman web API
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/cubbyman --serve /etc/cubbyman/cubbyfile.toml
+WorkingDirectory=/var/lib/cubbyman
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+EnvironmentFile=/etc/cubbyman/.env
+User=cubbyman
+Group=cubbyman
+
+[Install]
+WantedBy=multi-user.target

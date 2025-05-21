@@ -1,0 +1,4 @@
+[[containers]]
+name = "tiny-ip"
+image = "cubby.no/rosvik/tiny-ip:main"
+ports = ["2331:2331"]

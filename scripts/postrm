@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+# Disable and remove systemd unit
+systemctl stop cubbyman.service || true
+systemctl disable cubbyman.service || true
+systemctl daemon-reload
+
+# Remove system user
+deluser --system cubbyman || true

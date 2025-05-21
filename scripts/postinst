@@ -1,0 +1,31 @@
+#!/bin/sh
+set -e
+
+# Create system user if not exists
+if ! id "cubbyman" >/dev/null 2>&1; then
+    adduser --system --no-create-home --group cubbyman
+fi
+
+# Ensure working directory exists and is writable
+mkdir -p /var/lib/cubbyman
+chown cubbyman:cubbyman /var/lib/cubbyman
+
+# Ensure config directory exists and is writable
+mkdir -p /etc/cubbyman
+chmod 755 /etc/cubbyman
+
+# Generate default .env if it doesn't exist
+ENV_FILE="/etc/cubbyman/.env"
+if [ ! -f "$ENV_FILE" ]; then
+		API_USERNAME="cubby_$(openssl rand -hex 4)"
+		API_PASSWORD="$(openssl rand -hex 16)"
+		echo "API_USERNAME=$API_USERNAME" > "$ENV_FILE"
+		echo "API_PASSWORD=$API_PASSWORD" >> "$ENV_FILE"
+		chmod 600 "$ENV_FILE"
+		chown cubbyman:cubbyman "$ENV_FILE"
+fi
+
+# Reload and enable systemd service
+systemctl daemon-reload
+systemctl enable cubbyman.service
+
