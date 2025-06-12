@@ -1,7 +1,7 @@
 [package]
 name = "cubbyman"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 license = ""
 authors = ["Johannes Røsvik <j.rosvik@gmail.com>"]
 description = "A tool for managing Docker containers."
