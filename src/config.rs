@@ -59,7 +59,7 @@ where
                 .iter()
                 .map(|p| Port {
                     host: p.split(':').next().unwrap().parse::<i16>().unwrap(),
-                    container: p.split(':').last().unwrap().parse::<i16>().unwrap(),
+                    container: p.split(':').next_back().unwrap().parse::<i16>().unwrap(),
                 })
                 .collect(),
         )),
@@ -82,7 +82,7 @@ where
             .iter()
             .map(|m| Mount {
                 host_path: to_absolute_path(m.split(':').next().unwrap()),
-                container_path: m.split(':').last().unwrap().to_string(),
+                container_path: m.split(':').next_back().unwrap().to_string(),
             })
             .collect()
     }))
@@ -113,7 +113,7 @@ where
             .iter()
             .map(|v| Volume {
                 name: v.split(':').next().unwrap().to_string(),
-                container_path: v.split(':').last().unwrap().to_string(),
+                container_path: v.split(':').next_back().unwrap().to_string(),
             })
             .collect()
     }))
