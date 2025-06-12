@@ -1,8 +1,10 @@
 use crate::utils::*;
+use bollard::image::RemoveImageOptions;
 use bollard::{auth::DockerCredentials, image::CreateImageOptions};
 use futures::StreamExt;
 use std::default::Default;
 use std::env;
+use std::io::Write;
 
 pub async fn print_images(socket: &bollard::Docker) {
     let images = socket.list_images::<String>(None).await.unwrap();
@@ -39,6 +41,20 @@ pub async fn pull_image(socket: &bollard::Docker, image: String) {
     while let Some(Ok(create_image_info)) = result.next().await {
         println!("{:?}", create_image_info);
     }
+}
+
+pub async fn delete_image(socket: &bollard::Docker, image: &str) {
+    println!("Deleting image {}", image);
+
+    let credentials = get_credentials();
+    let options = RemoveImageOptions {
+        force: false,
+        ..Default::default()
+    };
+
+    let result = socket.remove_image(image, Some(options), credentials).await;
+
+    println!("{:?}", result);
 }
 
 fn get_credentials() -> Option<DockerCredentials> {

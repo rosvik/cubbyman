@@ -31,6 +31,11 @@ struct Args {
     apply: Option<Option<Input>>,
     #[arg(long, help = "Destroy containers listed in the specified config file")]
     destroy: Option<Option<Input>>,
+    #[arg(
+        long,
+        help = "Destroy containers and delete images listed in the specified config file"
+    )]
+    purge: Option<Option<Input>>,
 
     #[arg(
         long,
@@ -72,6 +77,15 @@ async fn main() {
             if let Some(network) = &container.network {
                 commands::networks::remove_network(&socket, network).await;
             }
+        }
+    } else if let Some(config_arg) = args.purge {
+        let config = config::load_config(config_arg).unwrap();
+        for container in config.containers.iter() {
+            let _ = commands::containers::remove_container(&socket, container.name.clone()).await;
+            if let Some(network) = &container.network {
+                commands::networks::remove_network(&socket, network).await;
+            }
+            commands::images::delete_image(&socket, &container.image).await;
         }
     }
 
