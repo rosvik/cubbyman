@@ -137,7 +137,7 @@ pub async fn print_containers(socket: &bollard::Docker) {
         println!();
 
         if let Some(status) = &container.status {
-            print!("{status}");
+            print!("{status} ");
         }
         container.ports.iter().for_each(|port| {
             port.iter().for_each(|p| {
