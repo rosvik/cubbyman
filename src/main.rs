@@ -85,7 +85,7 @@ async fn main() {
             if let Some(network) = &container.network {
                 commands::networks::remove_network(&socket, network).await;
             }
-            commands::images::delete_image(&socket, &container.image).await;
+            commands::images::delete_image(&socket, &config, &container.image).await;
         }
     }
 

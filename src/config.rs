@@ -10,6 +10,14 @@ use std::{
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
     pub containers: Vec<ContainerConfig>,
+    pub logins: Option<Vec<Login>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Login {
+    pub registry: String,
+    pub username: String,
+    pub password: String,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

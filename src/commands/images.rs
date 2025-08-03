@@ -1,10 +1,10 @@
+use crate::config::Config;
 use crate::utils::*;
 use bollard::image::RemoveImageOptions;
 use bollard::{auth::DockerCredentials, image::CreateImageOptions};
 use crossterm::style::Stylize;
 use futures::StreamExt;
 use std::default::Default;
-use std::env;
 
 pub async fn print_images(socket: &bollard::Docker) {
     let images = socket.list_images::<String>(None).await.unwrap();
@@ -24,10 +24,10 @@ pub async fn print_images(socket: &bollard::Docker) {
     });
 }
 
-pub async fn pull_image(socket: &bollard::Docker, image: String) {
+pub async fn pull_image(socket: &bollard::Docker, config: &Config, image: String) {
     println!("Pulling image {image}");
 
-    let credentials = get_credentials();
+    let credentials = get_credentials(config, &image);
     let options = CreateImageOptions::<String> {
         from_image: image,
         ..Default::default()
@@ -43,10 +43,10 @@ pub async fn pull_image(socket: &bollard::Docker, image: String) {
     }
 }
 
-pub async fn delete_image(socket: &bollard::Docker, image: &str) {
+pub async fn delete_image(socket: &bollard::Docker, config: &Config, image: &str) {
     println!("Deleting image {image}");
 
-    let credentials = get_credentials();
+    let credentials = get_credentials(config, image);
     let options = RemoveImageOptions {
         force: false,
         ..Default::default()
@@ -57,15 +57,16 @@ pub async fn delete_image(socket: &bollard::Docker, image: &str) {
     println!("{result:?}");
 }
 
-fn get_credentials() -> Option<DockerCredentials> {
-    if let Ok(username) = env::var("REGISTRY_USERNAME") {
-        if let Ok(password) = env::var("REGISTRY_PASSWORD") {
-            return Some(DockerCredentials {
-                username: Some(username),
-                password: Some(password),
-                ..Default::default()
-            });
-        }
+fn get_credentials(config: &Config, image: &str) -> Option<DockerCredentials> {
+    let registry = get_image_registry(image);
+    if let Some(logins) = &config.logins {
+        let login = logins.iter().find(|login| login.registry == registry);
+        login.map(|login| DockerCredentials {
+            username: Some(login.username.clone()),
+            password: Some(login.password.clone()),
+            ..Default::default()
+        })
+    } else {
+        None
     }
-    None
 }

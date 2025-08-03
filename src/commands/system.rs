@@ -60,7 +60,7 @@ pub async fn reload_all(socket: &bollard::Docker, config: &Config) {
         if let Some(network) = &container.network {
             networks::create_network(socket, network).await;
         }
-        images::pull_image(socket, container.image.clone()).await;
+        images::pull_image(socket, config, container.image.clone()).await;
         containers::run_container(socket, container.clone()).await;
     }
     println!("Reloaded all containers");
