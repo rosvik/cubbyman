@@ -114,7 +114,6 @@ pub async fn remove_container(
 
 pub async fn print_containers(socket: &bollard::Docker) {
     let options = ListContainersOptions::<String> {
-        all: true,
         ..Default::default()
     };
 
