@@ -121,27 +121,26 @@ pub async fn print_containers(socket: &bollard::Docker) {
         .list_containers::<String>(Some(options))
         .await
         .unwrap();
+    println!();
     containers.iter().for_each(|container| {
-        if let Some(id) = &container.id {
-            println!("{}", id.clone().dark_grey());
+        if let Some(names) = &container.names {
+            names.iter().for_each(|name| {
+                print!("{} ", &name[1..].cyan());
+            });
         }
         if let Some(image) = &container.image {
             print!("{} ", image.clone().dark_cyan());
         }
-        if let Some(names) = &container.names {
-            names.iter().for_each(|name| {
-                print!("{} ", name.clone().cyan());
-            });
+        if let Some(id) = &container.id {
+            println!("{}", &id[..12].dark_grey());
         }
 
-        println!();
-
         if let Some(status) = &container.status {
-            print!("{status} ");
+            print!("{} ", status.clone().yellow());
         }
         container.ports.iter().for_each(|port| {
             port.iter().for_each(|p| {
-                println!("{} ", format_port(p).yellow());
+                println!("{} ", format_port(p).dark_yellow());
             });
         });
 
