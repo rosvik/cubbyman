@@ -4,16 +4,12 @@ use bollard::{auth::DockerCredentials, image::CreateImageOptions};
 use futures::StreamExt;
 use std::default::Default;
 use std::env;
-use std::io::Write;
 
 pub async fn print_images(socket: &bollard::Docker) {
     let images = socket.list_images::<String>(None).await.unwrap();
     images.iter().for_each(|image| {
         println!("ID: {}", image.id);
-        image
-            .repo_tags
-            .iter()
-            .for_each(|tag| println!("-> {}", tag));
+        image.repo_tags.iter().for_each(|tag| println!("-> {tag}"));
         println!("\tLabels: {:?}", image.labels);
         // println!("\tManifests: {:?}", image.manifests);
         println!("\tParent ID: {:?}", image.parent_id);
@@ -28,7 +24,7 @@ pub async fn print_images(socket: &bollard::Docker) {
 }
 
 pub async fn pull_image(socket: &bollard::Docker, image: String) {
-    println!("Pulling image {}", image);
+    println!("Pulling image {image}");
 
     let credentials = get_credentials();
     let options = CreateImageOptions::<String> {
@@ -39,12 +35,12 @@ pub async fn pull_image(socket: &bollard::Docker, image: String) {
     let mut result = socket.create_image(Some(options), None, credentials);
 
     while let Some(Ok(create_image_info)) = result.next().await {
-        println!("{:?}", create_image_info);
+        println!("{create_image_info:?}");
     }
 }
 
 pub async fn delete_image(socket: &bollard::Docker, image: &str) {
-    println!("Deleting image {}", image);
+    println!("Deleting image {image}");
 
     let credentials = get_credentials();
     let options = RemoveImageOptions {
@@ -54,7 +50,7 @@ pub async fn delete_image(socket: &bollard::Docker, image: &str) {
 
     let result = socket.remove_image(image, Some(options), credentials).await;
 
-    println!("{:?}", result);
+    println!("{result:?}");
 }
 
 fn get_credentials() -> Option<DockerCredentials> {

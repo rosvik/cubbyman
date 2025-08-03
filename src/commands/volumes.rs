@@ -7,8 +7,8 @@ pub async fn create_volume(socket: &bollard::Docker, name: &String) {
         ..Default::default()
     };
     match socket.create_volume(options).await {
-        Ok(_) => println!("Volume {} created", name),
-        Err(e) => println!("Error creating volume: {}", e),
+        Ok(_) => println!("Volume {name} created"),
+        Err(e) => println!("Error creating volume: {e}"),
     }
 }
 
@@ -16,8 +16,8 @@ pub async fn create_volume(socket: &bollard::Docker, name: &String) {
 pub async fn remove_volume(socket: &bollard::Docker, name: &str) {
     let options = RemoveVolumeOptions { force: true };
     match socket.remove_volume(name, Some(options)).await {
-        Ok(_) => println!("Volume {} removed", name),
-        Err(e) => println!("Error removing volume: {}", e),
+        Ok(_) => println!("Volume {name} removed"),
+        Err(e) => println!("Error removing volume: {e}"),
     }
 }
 

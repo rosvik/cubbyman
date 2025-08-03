@@ -56,13 +56,13 @@ pub async fn basic_authenticate(
                     return unauthorized();
                 }
             };
-            let credentials = format!("{}:{}", username, password);
+            let credentials = format!("{username}:{password}");
 
             if credentials != request_credentials {
                 let request_username = request_credentials.split(':').next().unwrap();
                 println!(
-            "\x1b[1;31mFailed auth: Incorrect username/password provided for user '{request_username}'\x1b[0m"
-          );
+                    "\x1b[1;31mFailed auth: Incorrect username/password provided for user '{request_username}'\x1b[0m"
+                );
                 return unauthorized();
             }
 

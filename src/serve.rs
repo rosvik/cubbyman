@@ -1,10 +1,10 @@
 use crate::{commands, config, middleware::basic_authenticate};
 use axum::{
+    Router,
     extract::State,
     middleware,
     response::IntoResponse,
     routing::{get, post},
-    Router,
 };
 use clio::Input;
 
@@ -46,7 +46,7 @@ async fn reload(State(state): State<AppState>) -> impl IntoResponse {
     let config = match config::load_config(Some(state.config_arg)) {
         Ok(config) => config,
         Err(e) => {
-            println!("Unable to load config file: {}", e);
+            println!("Unable to load config file: {e}");
             return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response();
         }
     };

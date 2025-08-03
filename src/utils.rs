@@ -5,13 +5,13 @@ pub fn bytes_to_human(bytes: i64) -> String {
     let mb: f32 = bytes as f32 / 1024.0 / 1024.0;
     let kb: f32 = bytes as f32 / 1024.0;
     if gb > 1.0 {
-        format!("{:.2} GB", gb)
+        format!("{gb:.2} GB")
     } else if mb > 1.0 {
-        format!("{:.2} MB", mb)
+        format!("{mb:.2} MB")
     } else if kb > 1.0 {
-        format!("{:.2} KB", kb)
+        format!("{kb:.2} KB")
     } else {
-        format!("{:.2} B", bytes)
+        format!("{bytes} B")
     }
 }
 
@@ -31,7 +31,7 @@ pub fn format_port(port: &Port) -> String {
     )
 }
 
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 pub fn decode_base64(input: String) -> Result<String, Box<dyn std::error::Error>> {
     let bytes = general_purpose::STANDARD.decode(input)?;
     let utf8 = std::str::from_utf8(&bytes)?;

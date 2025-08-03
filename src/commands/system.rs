@@ -49,7 +49,7 @@ pub fn print_status(version: bollard::system::Version) {
             println!("Plugin: {}", plugin.name.clone().dark_cyan());
             println!("\t -> Version: {}", plugin.version);
             if let Some(detail) = &plugin.details {
-                println!("\t -> Details: {:?}", detail);
+                println!("\t -> Details: {detail:?}");
             }
         });
     });

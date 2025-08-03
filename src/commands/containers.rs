@@ -85,7 +85,7 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
             });
         }
         Err(e) => {
-            println!("Error creating container: {}", e);
+            println!("Error creating container: {e}");
             return;
         }
     }
@@ -95,10 +95,7 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
         .await
     {
         Ok(()) => println!("{}", "Container started".dark_green()),
-        Err(e) => println!(
-            "Error starting container: {}",
-            format!("{:?}", e).dark_red()
-        ),
+        Err(e) => println!("Error starting container: {}", format!("{e:?}").dark_red()),
     }
 }
 
@@ -141,7 +138,7 @@ pub async fn print_containers(socket: &bollard::Docker) {
         println!();
 
         if let Some(status) = &container.status {
-            print!("{} ", status);
+            print!("{status}");
         }
         container.ports.iter().for_each(|port| {
             port.iter().for_each(|p| {
