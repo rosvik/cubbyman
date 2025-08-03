@@ -1,6 +1,7 @@
 use crate::utils::*;
 use bollard::image::RemoveImageOptions;
 use bollard::{auth::DockerCredentials, image::CreateImageOptions};
+use crossterm::style::Stylize;
 use futures::StreamExt;
 use std::default::Default;
 use std::env;
@@ -34,8 +35,11 @@ pub async fn pull_image(socket: &bollard::Docker, image: String) {
 
     let mut result = socket.create_image(Some(options), None, credentials);
 
-    while let Some(Ok(create_image_info)) = result.next().await {
-        println!("{create_image_info:?}");
+    while let Some(create_image_info) = result.next().await {
+        match create_image_info {
+            Ok(create_image_info) => println!("{create_image_info:?}"),
+            Err(e) => println!("{}", format!("Error: {e:?}").dark_red()),
+        }
     }
 }
 
