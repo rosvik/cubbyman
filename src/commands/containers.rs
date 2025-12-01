@@ -69,6 +69,7 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
         env: config.env,
         host_config: Some(host_config),
         exposed_ports: Some(exposed_ports),
+        user: config.user,
         ..Default::default()
     };
 

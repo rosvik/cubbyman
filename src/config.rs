@@ -49,6 +49,9 @@ pub struct ContainerConfig {
     /// `volume_name:container_path`.
     #[serde(default, deserialize_with = "deserialize_volumes")]
     pub volumes: Option<Vec<Volume>>,
+
+    /// The user to run the container as. Format is `user:group`.
+    pub user: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
