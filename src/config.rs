@@ -28,6 +28,9 @@ pub struct ContainerConfig {
     /// The name of the container, e.g. "cubbyman"
     pub name: String,
 
+    /// Arguments passed to the container on startup
+    pub cmd: Option<Vec<String>>,
+
     /// Environment variables on the format `"KEY=value"`.
     pub env: Option<Vec<String>>,
 
