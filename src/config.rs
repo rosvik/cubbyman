@@ -152,3 +152,22 @@ fn get_default_config_path() -> Option<String> {
     println!("No configuration file found");
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_parse() {
+        let config = include_str!("../tests/example.toml");
+        let config = Config::from_str(config).unwrap();
+        assert_eq!(config.containers.len(), 2);
+        assert_eq!(config.containers[0].name, "container-cubby");
+        assert_eq!(
+            config.containers[0].image,
+            "cubby.no/rosvik/container-cubby:main"
+        );
+        assert_eq!(config.containers[0].network, Some(String::from("cubby")));
+        assert_eq!(config.containers[1].name, "hello");
+    }
+}

@@ -1,0 +1,41 @@
+[[containers]]
+# Unique identifier for this container on the host machine. Any pre-existing
+# container with this name will be replaced.
+name = "container-cubby"
+
+# Reference to the container image to pull, same as when running
+# `docker pull [image]`.
+image = "cubby.no/rosvik/container-cubby:main"
+
+# Environment variables to pass to the container.
+env = [
+  "USERNAME=admin",
+  "PASSWORD=hunter2",
+  "PORT=8602",
+  "HOST=0.0.0.0",
+  "DATA_DIR=/data"
+]
+
+# Local directories to bind to the container. Format is
+# `host_path:container_path`.
+mounts = [
+  "/tmp/data:/data"
+]
+
+# Docker volumes to mount into the container. Format is `name:container_path`.
+volumes = [
+  "myvolume:/data-2"
+]
+
+# Ports to expose on the host machine. Format is `host_port:container_port`.
+ports = ["8602:8602"]
+
+# Network name or mode. Modes are `bridge`, `host`, `none`,
+# and `container:<name|id>`. Any other value will be used to
+# set up a custom bridge network.
+network = "cubby"
+
+# Several containers can be set up with the same config file.
+[[containers]]
+name = "hello"
+image = "hello"
