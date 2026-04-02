@@ -43,7 +43,7 @@ fn api_router(state: AppState) -> Router {
 
 async fn reload(State(state): State<AppState>) -> impl IntoResponse {
     println!("Reloading");
-    let config = match Config::read(Some(state.config_arg.to_path_buf())) {
+    let config = match Config::read(state.config_arg.to_path_buf()) {
         Ok(config) => config,
         Err(e) => {
             println!("Unable to load config file: {e}");

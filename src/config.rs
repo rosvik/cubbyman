@@ -1,4 +1,5 @@
-use crate::utils;
+use crate::{traits::ToPath, utils};
+use clio::Input;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{
     error::Error,
@@ -132,16 +133,18 @@ impl Config {
         Ok(config)
     }
 
-    pub fn read(path: Option<PathBuf>) -> Result<Self, Box<dyn Error>> {
+    pub fn read(path: PathBuf) -> Result<Self, Box<dyn Error>> {
         let mut buffer = String::new();
-
-        if let Some(path) = path {
-            let _ = File::open(path)?.read_to_string(&mut buffer)?;
-        } else if let Some(path) = get_default_config_path() {
-            let mut file = File::open(path)?;
-            let _ = file.read_to_string(&mut buffer)?;
-        }
+        let _ = File::open(path)?.read_to_string(&mut buffer)?;
         Self::from_str(&buffer)
+    }
+}
+
+pub fn path_or_default(input: Option<Input>) -> Option<PathBuf> {
+    if let Some(input) = input {
+        Some(input.to_path_buf())
+    } else {
+        get_default_config_path().map(PathBuf::from)
     }
 }
 
