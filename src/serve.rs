@@ -1,4 +1,4 @@
-use crate::{commands, config, middleware::basic_authenticate};
+use crate::{commands, config::Config, middleware::basic_authenticate};
 use axum::{
     Router,
     extract::State,
@@ -43,7 +43,7 @@ fn api_router(state: AppState) -> Router {
 
 async fn reload(State(state): State<AppState>) -> impl IntoResponse {
     println!("Reloading");
-    let config = match config::load_config(Some(state.config_arg)) {
+    let config = match Config::read(Some(state.config_arg)) {
         Ok(config) => config,
         Err(e) => {
             println!("Unable to load config file: {e}");

@@ -119,20 +119,23 @@ where
     }))
 }
 
-pub fn load_config(cli_input: Option<Input>) -> Result<Config, Box<dyn Error>> {
-    let mut buffer = String::new();
-
-    if let Some(mut file) = cli_input {
-        let _ = file.read_to_string(&mut buffer)?;
-    } else if let Some(path) = get_default_config_path() {
-        let mut file = File::open(path)?;
-        let _ = file.read_to_string(&mut buffer)?;
+impl Config {
+    pub fn from_str(config_str: &str) -> Result<Self, Box<dyn Error>> {
+        let config: Config = toml::from_str(config_str)?;
+        Ok(config)
     }
-    load_config_from_string(&buffer)
-}
-fn load_config_from_string(config_string: &str) -> Result<Config, Box<dyn Error>> {
-    let config: Config = toml::from_str(config_string)?;
-    Ok(config)
+
+    pub fn read(cli_input: Option<Input>) -> Result<Self, Box<dyn Error>> {
+        let mut buffer = String::new();
+
+        if let Some(mut input) = cli_input {
+            let _ = input.read_to_string(&mut buffer)?;
+        } else if let Some(path) = get_default_config_path() {
+            let mut file = File::open(path)?;
+            let _ = file.read_to_string(&mut buffer)?;
+        }
+        Self::from_str(&buffer)
+    }
 }
 
 /// Will look for a `cubbyfile.toml` in the current directory

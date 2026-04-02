@@ -1,3 +1,4 @@
+use crate::config::Config;
 use clap::Parser;
 use clio::Input;
 
@@ -60,16 +61,16 @@ async fn main() {
         return;
     }
     if let Some(config_arg) = args.print_config {
-        let config = config::load_config(config_arg).unwrap();
+        let config = Config::read(config_arg).unwrap();
         println!("{}", toml::to_string(&config).unwrap());
         return;
     }
 
     if let Some(config_arg) = args.apply {
-        let config = config::load_config(config_arg).unwrap();
+        let config = Config::read(config_arg).unwrap();
         commands::system::reload_all(&socket, &config).await;
     } else if let Some(config_arg) = args.destroy {
-        let config = config::load_config(config_arg).unwrap();
+        let config = Config::read(config_arg).unwrap();
         for container in config.containers.iter() {
             commands::containers::remove_container(&socket, container.name.clone())
                 .await
@@ -79,7 +80,7 @@ async fn main() {
             }
         }
     } else if let Some(config_arg) = args.purge {
-        let config = config::load_config(config_arg).unwrap();
+        let config = Config::read(config_arg).unwrap();
         for container in config.containers.iter() {
             let _ = commands::containers::remove_container(&socket, container.name.clone()).await;
             if let Some(network) = &container.network {
