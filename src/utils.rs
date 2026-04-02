@@ -1,5 +1,4 @@
 use bollard::secret::{Port, PortTypeEnum};
-use std::path::PathBuf;
 
 pub fn get_image_registry(image: &str) -> String {
     let first_part = image.split('/').next().unwrap().to_string();
@@ -39,17 +38,6 @@ pub fn format_port(port: &Port) -> String {
         port.ip.clone().unwrap_or_default(),
         port.public_port.unwrap_or_default()
     )
-}
-
-pub fn to_absolute_path(path: &str) -> String {
-    let mut path = PathBuf::from(path);
-    if !path.is_absolute() {
-        path = std::env::current_dir().unwrap().join(path);
-        path = path.canonicalize().unwrap_or_else(|e| {
-            panic!("Failed to resolve path '{}': {}", path.to_string_lossy(), e)
-        });
-    }
-    path.to_string_lossy().to_string()
 }
 
 use base64::{Engine as _, engine::general_purpose};

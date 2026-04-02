@@ -99,7 +99,9 @@ where
         mounts
             .iter()
             .map(|m| Mount {
-                host_path: utils::to_absolute_path(m.split(':').next().unwrap()),
+                host_path: PathBuf::from(m.split(':').next().unwrap())
+                    .to_absolute()
+                    .to_string(),
                 container_path: m.split(':').next_back().unwrap().to_string(),
             })
             .collect()
