@@ -1,4 +1,4 @@
-use crate::config::Config;
+use crate::{config::Config, traits::ToPath};
 use clap::Parser;
 use clio::Input;
 
@@ -6,6 +6,7 @@ mod commands;
 mod config;
 mod middleware;
 mod serve;
+mod traits;
 mod utils;
 
 #[derive(Parser, Debug)]
@@ -61,16 +62,16 @@ async fn main() {
         return;
     }
     if let Some(config_arg) = args.print_config {
-        let config = Config::read(config_arg).unwrap();
+        let config = Config::read(config_arg.map(|input| input.to_path_buf())).unwrap();
         println!("{}", toml::to_string(&config).unwrap());
         return;
     }
 
     if let Some(config_arg) = args.apply {
-        let config = Config::read(config_arg).unwrap();
+        let config = Config::read(config_arg.map(|input| input.to_path_buf())).unwrap();
         commands::system::reload_all(&socket, &config).await;
     } else if let Some(config_arg) = args.destroy {
-        let config = Config::read(config_arg).unwrap();
+        let config = Config::read(config_arg.map(|input| input.to_path_buf())).unwrap();
         for container in config.containers.iter() {
             commands::containers::remove_container(&socket, container.name.clone())
                 .await
@@ -80,7 +81,7 @@ async fn main() {
             }
         }
     } else if let Some(config_arg) = args.purge {
-        let config = Config::read(config_arg).unwrap();
+        let config = Config::read(config_arg.map(|input| input.to_path_buf())).unwrap();
         for container in config.containers.iter() {
             let _ = commands::containers::remove_container(&socket, container.name.clone()).await;
             if let Some(network) = &container.network {

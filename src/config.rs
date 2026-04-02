@@ -1,7 +1,11 @@
 use crate::utils;
-use clio::Input;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::{error::Error, fs::File, io::Read, path::Path};
+use std::{
+    error::Error,
+    fs::File,
+    io::Read,
+    path::{Path, PathBuf},
+};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
@@ -128,11 +132,11 @@ impl Config {
         Ok(config)
     }
 
-    pub fn read(cli_input: Option<Input>) -> Result<Self, Box<dyn Error>> {
+    pub fn read(path: Option<PathBuf>) -> Result<Self, Box<dyn Error>> {
         let mut buffer = String::new();
 
-        if let Some(mut input) = cli_input {
-            let _ = input.read_to_string(&mut buffer)?;
+        if let Some(path) = path {
+            let _ = File::open(path)?.read_to_string(&mut buffer)?;
         } else if let Some(path) = get_default_config_path() {
             let mut file = File::open(path)?;
             let _ = file.read_to_string(&mut buffer)?;
