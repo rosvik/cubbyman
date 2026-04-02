@@ -5,8 +5,11 @@ use std::{error::Error, fs::File, io::Read, path::Path};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
+    #[serde(default)]
     pub containers: Vec<ContainerConfig>,
-    pub logins: Option<Vec<Login>>,
+
+    #[serde(default)]
+    pub logins: Vec<Login>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

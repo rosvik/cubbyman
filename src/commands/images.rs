@@ -59,14 +59,13 @@ pub async fn delete_image(socket: &bollard::Docker, config: &Config, image: &str
 
 fn get_credentials(config: &Config, image: &str) -> Option<DockerCredentials> {
     let registry = get_image_registry(image);
-    if let Some(logins) = &config.logins {
-        let login = logins.iter().find(|login| login.registry == registry);
-        login.map(|login| DockerCredentials {
-            username: Some(login.username.clone()),
-            password: Some(login.password.clone()),
-            ..Default::default()
-        })
-    } else {
-        None
-    }
+    let login = config
+        .logins
+        .iter()
+        .find(|login| login.registry == registry);
+    login.map(|login| DockerCredentials {
+        username: Some(login.username.clone()),
+        password: Some(login.password.clone()),
+        ..Default::default()
+    })
 }
