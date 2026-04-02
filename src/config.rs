@@ -1,11 +1,7 @@
+use crate::utils;
 use clio::Input;
 use serde::{Deserialize, Deserializer, Serialize};
-use std::{
-    error::Error,
-    fs::File,
-    io::Read,
-    path::{Path, PathBuf},
-};
+use std::{error::Error, fs::File, io::Read, path::Path};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
@@ -95,21 +91,11 @@ where
         mounts
             .iter()
             .map(|m| Mount {
-                host_path: to_absolute_path(m.split(':').next().unwrap()),
+                host_path: utils::to_absolute_path(m.split(':').next().unwrap()),
                 container_path: m.split(':').next_back().unwrap().to_string(),
             })
             .collect()
     }))
-}
-fn to_absolute_path(path: &str) -> String {
-    let mut path = PathBuf::from(path);
-    if !path.is_absolute() {
-        path = std::env::current_dir().unwrap().join(path);
-        path = path.canonicalize().unwrap_or_else(|e| {
-            panic!("Failed to resolve path '{}': {}", path.to_string_lossy(), e)
-        });
-    }
-    path.to_string_lossy().to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
