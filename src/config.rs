@@ -3,6 +3,7 @@ use clio::Input;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{
     error::Error,
+    fmt::Display,
     fs::File,
     io::Read,
     path::{Path, PathBuf},
@@ -69,23 +70,26 @@ pub struct Port {
     pub host: i16,
     pub container: i16,
 }
+impl Port {
+    pub fn from_string(string: &str) -> Self {
+        let (host, container) = string.split_once(':').unwrap();
+        Self {
+            host: host.parse::<i16>().unwrap(),
+            container: container.parse::<i16>().unwrap(),
+        }
+    }
+}
+impl Display for Port {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.host, self.container)
+    }
+}
 fn deserialize_ports<'de, D>(deserializer: D) -> Result<Option<Vec<Port>>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let ports: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
-    match ports {
-        Some(ports) => Ok(Some(
-            ports
-                .iter()
-                .map(|p| Port {
-                    host: p.split(':').next().unwrap().parse::<i16>().unwrap(),
-                    container: p.split(':').next_back().unwrap().parse::<i16>().unwrap(),
-                })
-                .collect(),
-        )),
-        None => Ok(None),
-    }
+    Ok(ports.map(|ports| ports.iter().map(|p| Port::from_string(p)).collect()))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -93,22 +97,26 @@ pub struct Mount {
     pub host_path: String,
     pub container_path: String,
 }
+impl Mount {
+    pub fn from_string(string: &str) -> Self {
+        let (host_path, container_path) = string.split_once(':').unwrap();
+        Self {
+            host_path: PathBuf::from(host_path).to_absolute().to_string(),
+            container_path: container_path.to_string(),
+        }
+    }
+}
+impl Display for Mount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.host_path, self.container_path)
+    }
+}
 fn deserialize_mounts<'de, D>(deserializer: D) -> Result<Option<Vec<Mount>>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let mounts: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
-    Ok(mounts.map(|mounts| {
-        mounts
-            .iter()
-            .map(|m| Mount {
-                host_path: PathBuf::from(m.split(':').next().unwrap())
-                    .to_absolute()
-                    .to_string(),
-                container_path: m.split(':').next_back().unwrap().to_string(),
-            })
-            .collect()
-    }))
+    Ok(mounts.map(|mounts| mounts.iter().map(|m| Mount::from_string(m)).collect()))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -116,20 +124,26 @@ pub struct Volume {
     pub name: String,
     pub container_path: String,
 }
+impl Volume {
+    pub fn from_string(string: &str) -> Self {
+        let (name, container_path) = string.split_once(':').unwrap();
+        Self {
+            name: name.to_string(),
+            container_path: container_path.to_string(),
+        }
+    }
+}
+impl Display for Volume {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}", self.name, self.container_path)
+    }
+}
 fn deserialize_volumes<'de, D>(deserializer: D) -> Result<Option<Vec<Volume>>, D::Error>
 where
     D: Deserializer<'de>,
 {
     let volumes: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
-    Ok(volumes.map(|volumes| {
-        volumes
-            .iter()
-            .map(|v| Volume {
-                name: v.split(':').next().unwrap().to_string(),
-                container_path: v.split(':').next_back().unwrap().to_string(),
-            })
-            .collect()
-    }))
+    Ok(volumes.map(|volumes| volumes.iter().map(|v| Volume::from_string(v)).collect()))
 }
 
 impl Config {
