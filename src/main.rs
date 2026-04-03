@@ -63,18 +63,18 @@ async fn main() {
     }
     if let Some(config_arg) = args.print_config {
         let config_path = path_or_default(config_arg).unwrap_or_else(|| std::process::exit(1));
-        let config = Config::read(config_path).unwrap();
+        let config = Config::load(&config_path).unwrap();
         println!("{}", toml::to_string(&config).unwrap());
         return;
     }
 
     if let Some(config_arg) = args.apply {
         let config_path = path_or_default(config_arg).unwrap_or_else(|| std::process::exit(1));
-        let config = Config::read(config_path).unwrap();
+        let config = Config::load(&config_path).unwrap();
         commands::system::reload_all(&socket, &config).await;
     } else if let Some(config_arg) = args.destroy {
         let config_path = path_or_default(config_arg).unwrap_or_else(|| std::process::exit(1));
-        let config = Config::read(config_path).unwrap();
+        let config = Config::load(&config_path).unwrap();
         for container in config.containers.iter() {
             commands::containers::remove_container(&socket, container.name.clone())
                 .await
@@ -85,7 +85,7 @@ async fn main() {
         }
     } else if let Some(config_arg) = args.purge {
         let config_path = path_or_default(config_arg).unwrap_or_else(|| std::process::exit(1));
-        let config = Config::read(config_path).unwrap();
+        let config = Config::load(&config_path).unwrap();
         for container in config.containers.iter() {
             let _ = commands::containers::remove_container(&socket, container.name.clone()).await;
             if let Some(network) = &container.network {

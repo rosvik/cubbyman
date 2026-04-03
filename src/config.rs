@@ -1,4 +1,4 @@
-use crate::{traits::ToPath, utils};
+use crate::traits::{ToAbsolute, ToString};
 use clio::Input;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{
@@ -15,6 +15,9 @@ pub struct Config {
 
     #[serde(default)]
     pub logins: Vec<Login>,
+
+    #[serde(default)]
+    include: Vec<PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -135,7 +138,27 @@ impl Config {
         Ok(config)
     }
 
-    pub fn read(path: PathBuf) -> Result<Self, Box<dyn Error>> {
+    /// Load a config file and recursively include other config files
+    pub fn load(path: &PathBuf) -> Result<Self, Box<dyn Error>> {
+        let current_dir = std::env::current_dir().unwrap();
+        let directory = path.parent().unwrap_or_else(|| &current_dir).to_path_buf();
+        let mut config = Self::read(path)?;
+        for include in config.include.iter() {
+            // Recursively include with the new base directory
+            let include_path = directory.join(include);
+            let included_config = Self::load(&include_path)?;
+
+            config.containers.extend(included_config.containers);
+            config.logins.extend(included_config.logins);
+        }
+
+        // Clear the include list
+        config.include = vec![];
+
+        Ok(config)
+    }
+
+    fn read(path: &PathBuf) -> Result<Self, Box<dyn Error>> {
         let mut buffer = String::new();
         let _ = File::open(path)?.read_to_string(&mut buffer)?;
         Self::from_str(&buffer)
@@ -144,7 +167,7 @@ impl Config {
 
 pub fn path_or_default(input: Option<Input>) -> Option<PathBuf> {
     if let Some(input) = input {
-        Some(input.to_path_buf())
+        Some(input.path().to_path_buf())
     } else {
         get_default_config_path().map(PathBuf::from)
     }
@@ -181,5 +204,18 @@ mod tests {
         );
         assert_eq!(config.containers[0].network, Some(String::from("cubby")));
         assert_eq!(config.containers[1].name, "hello");
+    }
+
+    #[tokio::test]
+    async fn test_include() {
+        let config = include_str!("../tests/include1.toml");
+        let config = Config::from_str(config).unwrap();
+        assert_eq!(config.include.len(), 1);
+        assert_eq!(config.containers.len(), 0);
+
+        let config = Config::load(&PathBuf::from("tests/include1.toml")).unwrap();
+        assert_eq!(config.include.len(), 0);
+        assert_eq!(config.containers.len(), 2);
+        assert_eq!(config.containers[0].name, "container-cubby");
     }
 }
