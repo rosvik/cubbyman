@@ -67,7 +67,9 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
     let bollard_config = bollard::container::Config::<String> {
         image: Some(config.image),
         cmd: config.cmd,
-        env: config.env,
+        env: config
+            .env
+            .map(|env| env.iter().map(|e| e.to_string()).collect()),
         host_config: Some(host_config),
         exposed_ports: Some(exposed_ports),
         user: config.user,

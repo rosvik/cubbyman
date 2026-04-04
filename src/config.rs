@@ -40,7 +40,8 @@ pub struct ContainerConfig {
     pub cmd: Option<Vec<String>>,
 
     /// Environment variables on the format `"KEY=value"`.
-    pub env: Option<Vec<String>>,
+    #[serde(default, deserialize_with = "deserialize_envs")]
+    pub env: Option<Vec<Env>>,
 
     /// The ports to bind, e.g. ["8602:8602"] (host:container)
     #[serde(default, deserialize_with = "deserialize_ports")]
@@ -63,6 +64,33 @@ pub struct ContainerConfig {
 
     /// The user to run the container as. Format is `user:group`.
     pub user: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Env {
+    pub key: String,
+    pub value: String,
+}
+impl Env {
+    pub fn from_string(string: &str) -> Self {
+        let (key, value) = string.split_once('=').unwrap();
+        Self {
+            key: key.to_string(),
+            value: value.to_string(),
+        }
+    }
+}
+impl Display for Env {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}={}", self.key, self.value)
+    }
+}
+fn deserialize_envs<'de, D>(deserializer: D) -> Result<Option<Vec<Env>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let envs: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
+    Ok(envs.map(|envs| envs.iter().map(|e| Env::from_string(e)).collect()))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
