@@ -1,6 +1,6 @@
 use crate::{
     config::ContainerConfig,
-    traits::{ToRelative, ToString},
+    traits::{ToAbsolute, ToRelative, ToString},
     utils::*,
 };
 use bollard::{
@@ -40,7 +40,13 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
         .iter()
         .map(|mount| bollard::secret::Mount {
             target: Some(mount.container_path.clone()),
-            source: Some(mount.host_path.to_relative(&base_directory).to_string()),
+            source: Some(
+                mount
+                    .host_path
+                    .to_relative(&base_directory)
+                    .to_absolute()
+                    .to_string(),
+            ),
             typ: Some(MountTypeEnum::BIND),
             ..Default::default()
         })
