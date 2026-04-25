@@ -223,10 +223,19 @@ impl Config {
                 let env_file = utils::load_env_in(directory.as_path())?;
                 for secret in secrets.iter() {
                     if let Some(value) = env_file.get(secret.dotenv_key.as_str()) {
-                        container.env.as_mut().unwrap().push(Env {
-                            key: secret.container_env_key.clone(),
-                            value: value.clone(),
-                        });
+                        match container.env {
+                            Some(ref mut env) => env.push(Env {
+                                key: secret.container_env_key.clone(),
+                                value: value.clone(),
+                            }),
+                            None => {
+                                // If the env is not set, set it to the secret
+                                container.env = Some(vec![Env {
+                                    key: secret.container_env_key.clone(),
+                                    value: value.clone(),
+                                }])
+                            }
+                        }
                     };
                 }
                 // Clear the secrets list
@@ -310,15 +319,25 @@ mod tests {
 
         let config = Config::load(&PathBuf::from("tests/include1.toml")).unwrap();
         assert_eq!(config.include.len(), 0);
-        assert_eq!(config.containers.len(), 2);
-        assert_eq!(config.containers[0].name, "container-cubby");
+        assert_eq!(config.containers.len(), 3);
+        let container_cubby = config
+            .containers
+            .iter()
+            .find(|c| c.name == "container-cubby")
+            .unwrap();
+        assert_eq!(container_cubby.name, "container-cubby");
     }
 
     #[tokio::test]
     async fn test_load() {
-        let config = Config::load(&PathBuf::from("tests/example.toml")).unwrap();
+        let config = Config::load(&PathBuf::from("tests/include1.toml")).unwrap();
         // Find env with key "PASSWORD"
-        let password = config.containers[0]
+        let container_cubby = config
+            .containers
+            .iter()
+            .find(|c| c.name == "container-cubby")
+            .unwrap();
+        let password = container_cubby
             .env
             .as_ref()
             .unwrap()
@@ -326,5 +345,20 @@ mod tests {
             .find(|e| e.key == "PASSWORD")
             .unwrap();
         assert_eq!(password.value, String::from("hunter2"));
+
+        // Find container with name "qr.248.no"
+        let qr_248_no = config
+            .containers
+            .iter()
+            .find(|c| c.name == "qr.248.no")
+            .unwrap();
+        let super_secret = qr_248_no
+            .env
+            .as_ref()
+            .unwrap()
+            .iter()
+            .find(|e| e.key == "SUPER_SECRET")
+            .unwrap();
+        assert_eq!(super_secret.value, String::from("hello!"));
     }
 }
