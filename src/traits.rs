@@ -1,5 +1,5 @@
 use clio::Input;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 pub trait ToString {
     fn to_string(&self) -> String;
@@ -10,18 +10,12 @@ impl ToString for PathBuf {
     }
 }
 
-pub trait ToAbsolute {
-    fn to_absolute(&self) -> PathBuf;
+pub trait ToRelative {
+    fn to_relative(&self, base: &Path) -> PathBuf;
 }
-impl ToAbsolute for PathBuf {
-    fn to_absolute(&self) -> PathBuf {
-        if self.is_absolute() {
-            return self.clone();
-        }
-        let path = std::env::current_dir().unwrap().join(self);
-        path.canonicalize().unwrap_or_else(|e| {
-            panic!("Failed to resolve path '{}': {}", path.to_string_lossy(), e)
-        })
+impl ToRelative for PathBuf {
+    fn to_relative(&self, base: &Path) -> PathBuf {
+        base.join(self)
     }
 }
 

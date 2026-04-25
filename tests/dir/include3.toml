@@ -4,3 +4,4 @@ include = ["../example.toml"]
 name = "qr.248.no"
 image = "cubby.no/rosvik/qr.248.no:main"
 secrets = ["SUPER_SECRET"]
+mounts = ["test.txt:test.txt"]

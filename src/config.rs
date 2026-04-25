@@ -1,7 +1,4 @@
-use crate::{
-    traits::{ToAbsolute, ToString},
-    utils,
-};
+use crate::{traits::ToString, utils};
 use clio::Input;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{
@@ -71,6 +68,10 @@ pub struct ContainerConfig {
 
     /// The user to run the container as. Format is `user:group`.
     pub user: Option<String>,
+
+    /// The base directory to resolve paths relative to.
+    #[serde(skip)]
+    base_directory: Option<PathBuf>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -168,21 +169,23 @@ where
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Mount {
-    pub host_path: String,
+    /// The local path to bind to the container. Relative to the directory of the config file.
+    pub host_path: PathBuf,
+    /// The path to bind to the container.
     pub container_path: String,
 }
 impl Mount {
     pub fn from_string(string: &str) -> Self {
         let (host_path, container_path) = string.split_once(':').unwrap();
         Self {
-            host_path: PathBuf::from(host_path).to_absolute().to_string(),
+            host_path: PathBuf::from(host_path),
             container_path: container_path.to_string(),
         }
     }
 }
 impl Display for Mount {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.host_path, self.container_path)
+        write!(f, "{}:{}", self.host_path.to_string(), self.container_path)
     }
 }
 fn deserialize_mounts<'de, D>(deserializer: D) -> Result<Option<Vec<Mount>>, D::Error>
@@ -228,14 +231,17 @@ impl Config {
 
     /// Load a config file and recursively include other config files
     pub fn load(path: &PathBuf) -> Result<Self, Box<dyn Error>> {
-        let current_dir = std::env::current_dir().unwrap();
-        let directory = path.parent().unwrap_or_else(|| &current_dir).to_path_buf();
+        let current_dir = std::env::current_dir().unwrap_or(PathBuf::from("."));
+        let base_directory = path.parent().unwrap_or_else(|| &current_dir).to_path_buf();
         let mut config = Self::read(path)?;
 
         for container in config.containers.iter_mut() {
+            // Store the config file's base directory for path resolution
+            container.base_directory = Some(base_directory.clone());
+
             if let Some(secrets) = container.secrets.as_ref() {
                 // Load the .env file and insert as environment variable
-                let env_file = utils::load_env_in(directory.as_path())?;
+                let env_file = utils::load_env_in(base_directory.as_path())?;
                 for secret in secrets.iter() {
                     if let Some(value) = env_file.get(secret.dotenv_key.as_str()) {
                         container.env.push(Env {
@@ -251,7 +257,7 @@ impl Config {
 
         for include in config.include.iter() {
             // Recursively include with the new base directory
-            let include_path = directory.join(include);
+            let include_path = base_directory.join(include);
             let included_config = Self::load(&include_path)?;
 
             config.containers.extend(included_config.containers);
@@ -268,6 +274,14 @@ impl Config {
         let mut buffer = String::new();
         let _ = File::open(path)?.read_to_string(&mut buffer)?;
         Self::from_str(&buffer)
+    }
+}
+
+impl ContainerConfig {
+    pub fn base_directory(&self) -> PathBuf {
+        self.base_directory
+            .clone()
+            .unwrap_or_else(|| std::env::current_dir().unwrap_or(PathBuf::from(".")))
     }
 }
 
@@ -297,6 +311,7 @@ fn get_default_config_path() -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::traits::ToRelative;
 
     #[tokio::test]
     async fn test_parse() {
@@ -362,5 +377,18 @@ mod tests {
             .find(|e| e.key == "SUPER_SECRET")
             .unwrap();
         assert_eq!(super_secret.value, String::from("hello!"));
+
+        // Find mount with name "test.txt"
+        let test_txt = qr_248_no
+            .mounts
+            .as_ref()
+            .unwrap()
+            .iter()
+            .find(|m| m.container_path == "test.txt")
+            .unwrap();
+        assert_eq!(
+            test_txt.host_path.to_relative(&qr_248_no.base_directory()),
+            String::from("tests/dir/test.txt")
+        );
     }
 }

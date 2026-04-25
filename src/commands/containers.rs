@@ -1,4 +1,8 @@
-use crate::{config::ContainerConfig, utils::*};
+use crate::{
+    config::ContainerConfig,
+    traits::{ToRelative, ToString},
+    utils::*,
+};
 use bollard::{
     container::{CreateContainerOptions, ListContainersOptions, RemoveContainerOptions},
     secret::{HostConfig, MountTypeEnum, PortBinding},
@@ -8,6 +12,8 @@ use std::{collections::HashMap, default::Default};
 
 pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
     println!("Running image {} ({})", config.image, config.name);
+
+    let base_directory = config.base_directory();
 
     let options = CreateContainerOptions::<String> {
         name: config.name.clone(),
@@ -34,7 +40,7 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
         .iter()
         .map(|mount| bollard::secret::Mount {
             target: Some(mount.container_path.clone()),
-            source: Some(mount.host_path.clone()),
+            source: Some(mount.host_path.to_relative(&base_directory).to_string()),
             typ: Some(MountTypeEnum::BIND),
             ..Default::default()
         })
