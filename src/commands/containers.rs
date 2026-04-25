@@ -64,12 +64,11 @@ pub async fn run_container(socket: &bollard::Docker, config: ContainerConfig) {
         let exposed_port = format!("{}/tcp", port.container);
         exposed_ports.insert(exposed_port, empty.clone());
     }
+    let env: Vec<String> = config.env.iter().map(|e| e.to_string()).collect();
     let bollard_config = bollard::container::Config::<String> {
         image: Some(config.image),
         cmd: config.cmd,
-        env: config
-            .env
-            .map(|env| env.iter().map(|e| e.to_string()).collect()),
+        env: (!env.is_empty()).then_some(env),
         host_config: Some(host_config),
         exposed_ports: Some(exposed_ports),
         user: config.user,

@@ -44,7 +44,7 @@ pub struct ContainerConfig {
 
     /// Environment variables on the format `"KEY=value"`.
     #[serde(default, deserialize_with = "deserialize_envs")]
-    pub env: Option<Vec<Env>>,
+    pub env: Vec<Env>,
 
     /// Secrets to load from .env file. Format is `dotenv_key:container_env_key`.
     #[serde(default, deserialize_with = "deserialize_secrets")]
@@ -92,12 +92,12 @@ impl Display for Env {
         write!(f, "{}={}", self.key, self.value)
     }
 }
-fn deserialize_envs<'de, D>(deserializer: D) -> Result<Option<Vec<Env>>, D::Error>
+fn deserialize_envs<'de, D>(deserializer: D) -> Result<Vec<Env>, D::Error>
 where
     D: Deserializer<'de>,
 {
-    let envs: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
-    Ok(envs.map(|envs| envs.iter().map(|e| Env::from_string(e)).collect()))
+    let envs: Vec<String> = Deserialize::deserialize(deserializer)?;
+    Ok(envs.iter().map(|e| Env::from_string(e)).collect())
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -223,19 +223,10 @@ impl Config {
                 let env_file = utils::load_env_in(directory.as_path())?;
                 for secret in secrets.iter() {
                     if let Some(value) = env_file.get(secret.dotenv_key.as_str()) {
-                        match container.env {
-                            Some(ref mut env) => env.push(Env {
-                                key: secret.container_env_key.clone(),
-                                value: value.clone(),
-                            }),
-                            None => {
-                                // If the env is not set, set it to the secret
-                                container.env = Some(vec![Env {
-                                    key: secret.container_env_key.clone(),
-                                    value: value.clone(),
-                                }])
-                            }
-                        }
+                        container.env.push(Env {
+                            key: secret.container_env_key.clone(),
+                            value: value.clone(),
+                        });
                     };
                 }
                 // Clear the secrets list
@@ -339,8 +330,6 @@ mod tests {
             .unwrap();
         let password = container_cubby
             .env
-            .as_ref()
-            .unwrap()
             .iter()
             .find(|e| e.key == "PASSWORD")
             .unwrap();
@@ -354,8 +343,6 @@ mod tests {
             .unwrap();
         let super_secret = qr_248_no
             .env
-            .as_ref()
-            .unwrap()
             .iter()
             .find(|e| e.key == "SUPER_SECRET")
             .unwrap();
