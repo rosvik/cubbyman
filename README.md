@@ -1,9 +1,9 @@
-# cubbyman
+# Cubbyman
+
+A CLI for declaratively managing Docker containers from a TOML config file.
 
 > [!WARNING]
 > Cubbyman is still in development, and may be subject to frequent and unannounced breaking changes.
-
-A CLI for declaratively managing Docker containers from a TOML config file.
 
 ## Overview
 
@@ -45,11 +45,13 @@ volumes = ["redis:/data"]
 secrets = ["REDIS_PASSWORD"]
 ```
 
-Apply it:
+Then apply the config:
 
 ```sh
 cubbyman --apply
 ```
+
+Cubbyman will pull the images, create the networks, and run the containers with the specified settings.
 
 A more complete example can be found in [cubbyfile.example.toml](cubbyfile.example.toml).
 
@@ -77,14 +79,14 @@ If `[file]` is omitted, cubbyman looks for `cubbyfile.toml` in the current direc
 | Field | Type | Description |
 |---|---|---|
 | `name` | string | Container name. Must be unique. Existing containers with this name are replaced. |
-| `image` | string | Image reference, as you would pass to `docker pull`. |
-| `cmd` | array of string | Arguments passed to the container on startup. |
-| `env` | array of string | Environment variables, formatted as `"KEY=value"`. |
-| `secrets` | array of string | Secrets pulled from the local `.env` file. Format: `"DOTENV_KEY:CONTAINER_KEY"`, or just `"KEY"` if both names match. |
-| `ports` | array of string | Port bindings, formatted as `"host:container"`. |
+| `image` | string | Image reference, as you would pass it to `docker pull <image>`. |
+| `cmd` | array of strings | Arguments passed to the container on startup. |
+| `env` | array of strings | Environment variables, formatted as `"KEY=value"`. |
+| `secrets` | array of strings | Secrets pulled from the local `.env` file. Format: `"DOTENV_KEY:CONTAINER_KEY"`, or just `"KEY"` if both names match. |
+| `ports` | array of strings | Port bindings, formatted as `"host:container"`. |
 | `network` | string | `bridge`, `host`, `none`, `container:<name\|id>`, or any other value to create a custom bridge network with that name. |
-| `mounts` | array of string | Bind mounts, formatted as `"host_path:container_path"`. Host paths are resolved relative to the directory of the config file. |
-| `volumes` | array of string | Docker volumes, formatted as `"volume_name:container_path"`. |
+| `mounts` | array of strings | Bind mounts, formatted as `"host_path:container_path"`. Host paths are resolved relative to the directory of the config file. |
+| `volumes` | array of strings | Docker volumes, formatted as `"volume_name:container_path"`. |
 | `user` | string | User to run the container as, formatted as `"user:group"`. |
 
 ### `[[logins]]`
@@ -97,11 +99,9 @@ Registry credentials used when pulling images.
 | `username` | string | Registry username. |
 | `password` | string | Registry password. |
 
-Duplicate logins (same `registry` + `username`) are de-duplicated automatically.
-
 ### `include`
 
-A top-level array of paths to other config files, resolved relative to the current file. Containers and logins from included files are merged into the parent.
+A list of other config files to include, resolved relative to the current file. Containers and logins from included files are merged into the parent.
 
 ```toml
 include = ["services/web.toml", "services/db.toml"]
@@ -109,7 +109,7 @@ include = ["services/web.toml", "services/db.toml"]
 
 ### Secrets and `.env`
 
-Cubbyman loads a `.env` file from the directory of the config file and makes it available as environment variables to the containers if it's listed in the `secrets` field.
+Cubbyman loads `.env` files from the directory of the config file and makes them available as environment variables to the containers if they are listed in the `secrets` field.
 
 For example, in a config file at `example/cubbyfile.toml`:
 
@@ -121,7 +121,7 @@ env = ["PORT=8080"]
 secrets = ["API_DB_PASSWORD:PASSWORD", "API_TOKEN"]
 ```
 
-With a `.env` file at `example/.env` containing:
+With this `.env` file at `example/.env`:
 
 ```env
 API_DB_PASSWORD=hunter2
@@ -132,7 +132,7 @@ The container receives the environment variables `PASSWORD=hunter2` and `API_TOK
 
 ## Webhook server
 
-Run cubbyman as a long-lived HTTP server that reloads containers when triggered. Useful for CI-driven redeploys.
+Run cubbyman as a HTTP server that reloads containers when triggered. Useful for CI-driven redeploys.
 
 ```sh
 cubbyman --serve cubbyfile.toml
