@@ -10,13 +10,12 @@ image = "cubby.no/rosvik/container-cubby:main"
 # Environment variables to pass to the container.
 env = [
   "USERNAME=admin",
-  "PORT=8602",
   "HOST=0.0.0.0",
   "DATA_DIR=/data"
 ]
 
-# Loaded from .env file. Format is `dotenv_key:container_env_key`.
-secrets = ["CONTAINER_CUBBY_PASSWORD:PASSWORD"]
+# Loaded from .env file. Format is `dotenv_key:container_env_key` or just `key`.
+secrets = ["CONTAINER_CUBBY_PASSWORD:PASSWORD", "PORT"]
 
 # Local directories to bind to the container. Format is
 # `host_path:container_path`.

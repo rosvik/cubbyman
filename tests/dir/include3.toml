@@ -3,4 +3,4 @@ include = ["../example.toml"]
 [[containers]]
 name = "qr.248.no"
 image = "cubby.no/rosvik/qr.248.no:main"
-secrets = ["SUPER_SECRET:SUPER_SECRET"]
+secrets = ["SUPER_SECRET"]
