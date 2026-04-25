@@ -5,6 +5,7 @@ use std::{
     error::Error,
     fmt::Display,
     fs::File,
+    hash::{Hash, Hasher},
     io::Read,
     path::{Path, PathBuf},
 };
@@ -27,6 +28,18 @@ pub struct Login {
     pub username: String,
     pub password: String,
 }
+impl Hash for Login {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.registry.hash(state);
+        self.username.hash(state);
+    }
+}
+impl PartialEq for Login {
+    fn eq(&self, other: &Self) -> bool {
+        self.registry == other.registry && self.username == other.username
+    }
+}
+impl Eq for Login {}
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ContainerConfig {
@@ -267,13 +280,26 @@ impl Config {
         // Clear the include list
         config.include = vec![];
 
-        Ok(config)
+        config.check()
     }
 
     fn read(path: &PathBuf) -> Result<Self, Box<dyn Error>> {
         let mut buffer = String::new();
         let _ = File::open(path)?.read_to_string(&mut buffer)?;
         Self::from_str(&buffer)
+    }
+
+    /// Checks the config for errors and warnings.
+    /// - Removes duplicate logins
+    /// - Throws an error if several containers have the same name
+    fn check(self) -> Result<Self, Box<dyn Error>> {
+        // Remove duplicate logins
+        let logins = utils::remove_duplicates::<Login>(self.logins);
+
+        if utils::has_duplicates_by_key(&self.containers, |c| c.name.clone()) {
+            return Err("Duplicate container names".into());
+        }
+        Ok(Config { logins, ..self })
     }
 }
 

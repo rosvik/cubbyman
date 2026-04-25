@@ -1,11 +1,27 @@
+use bollard::secret::{Port, PortTypeEnum};
 use std::{
     collections::HashMap,
     fs::File,
+    hash::Hash,
     io::{BufRead, BufReader},
     path::Path,
 };
 
-use bollard::secret::{Port, PortTypeEnum};
+pub fn has_duplicates_by_key<T, K: Eq + Hash>(vec: &[T], key: fn(&T) -> K) -> bool {
+    let mut map = HashMap::new();
+    for item in vec.iter() {
+        map.insert(key(item), true);
+    }
+    map.len() != vec.len()
+}
+
+pub fn remove_duplicates<T: Eq + Hash>(vec: Vec<T>) -> Vec<T> {
+    let mut map = HashMap::new();
+    for item in vec {
+        map.insert(item, true);
+    }
+    map.into_keys().collect()
+}
 
 pub fn get_image_registry(image: &str) -> String {
     let first_part = image.split('/').next().unwrap().to_string();
