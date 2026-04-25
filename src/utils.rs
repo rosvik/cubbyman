@@ -1,3 +1,10 @@
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::{BufRead, BufReader},
+    path::Path,
+};
+
 use bollard::secret::{Port, PortTypeEnum};
 
 pub fn get_image_registry(image: &str) -> String {
@@ -45,6 +52,29 @@ pub fn decode_base64(input: String) -> Result<String, Box<dyn std::error::Error>
     let bytes = general_purpose::STANDARD.decode(input)?;
     let utf8 = std::str::from_utf8(&bytes)?;
     Ok(utf8.to_string())
+}
+
+pub fn load_env_in(
+    directory: &Path,
+) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+    let env_file = directory.join(".env");
+    let env_file = File::open(env_file)?;
+    let env_file = BufReader::new(env_file);
+    parse_env_file(env_file)
+}
+fn parse_env_file(
+    file: BufReader<File>,
+) -> Result<HashMap<String, String>, Box<dyn std::error::Error>> {
+    let mut env = HashMap::new();
+    for line in file.lines() {
+        let line = line?;
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let (key, value) = line.split_once('=').ok_or("Invalid .env file")?;
+        env.insert(key.to_string(), value.to_string());
+    }
+    Ok(env)
 }
 
 #[cfg(test)]

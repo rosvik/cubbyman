@@ -1,4 +1,7 @@
-use crate::traits::{ToAbsolute, ToString};
+use crate::{
+    traits::{ToAbsolute, ToString},
+    utils,
+};
 use clio::Input;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::{
@@ -42,6 +45,10 @@ pub struct ContainerConfig {
     /// Environment variables on the format `"KEY=value"`.
     #[serde(default, deserialize_with = "deserialize_envs")]
     pub env: Option<Vec<Env>>,
+
+    /// Secrets to load from .env file. Format is `dotenv_key:container_env_key`.
+    #[serde(default, deserialize_with = "deserialize_secrets")]
+    secrets: Option<Vec<Secret>>,
 
     /// The ports to bind, e.g. ["8602:8602"] (host:container)
     #[serde(default, deserialize_with = "deserialize_ports")]
@@ -91,6 +98,30 @@ where
 {
     let envs: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
     Ok(envs.map(|envs| envs.iter().map(|e| Env::from_string(e)).collect()))
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct Secret {
+    pub dotenv_key: String,
+    pub container_env_key: String,
+}
+
+impl Secret {
+    pub fn from_string(string: &str) -> Self {
+        let (dotenv_key, container_env_key) = string.split_once(':').unwrap();
+        Self {
+            dotenv_key: dotenv_key.to_string(),
+            container_env_key: container_env_key.to_string(),
+        }
+    }
+}
+
+fn deserialize_secrets<'de, D>(deserializer: D) -> Result<Option<Vec<Secret>>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let secrets: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
+    Ok(secrets.map(|secrets| secrets.iter().map(|s| Secret::from_string(s)).collect()))
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -185,6 +216,24 @@ impl Config {
         let current_dir = std::env::current_dir().unwrap();
         let directory = path.parent().unwrap_or_else(|| &current_dir).to_path_buf();
         let mut config = Self::read(path)?;
+
+        for container in config.containers.iter_mut() {
+            if let Some(secrets) = container.secrets.as_ref() {
+                // Load the .env file and insert as environment variable
+                let env_file = utils::load_env_in(directory.as_path())?;
+                for secret in secrets.iter() {
+                    if let Some(value) = env_file.get(secret.dotenv_key.as_str()) {
+                        container.env.as_mut().unwrap().push(Env {
+                            key: secret.container_env_key.clone(),
+                            value: value.clone(),
+                        });
+                    };
+                }
+                // Clear the secrets list
+                container.secrets = None;
+            }
+        }
+
         for include in config.include.iter() {
             // Recursively include with the new base directory
             let include_path = directory.join(include);
@@ -246,6 +295,10 @@ mod tests {
         );
         assert_eq!(config.containers[0].network, Some(String::from("cubby")));
         assert_eq!(config.containers[1].name, "hello");
+
+        let secret = config.containers[0].secrets.as_ref().unwrap()[0].clone();
+        assert_eq!(secret.dotenv_key, String::from("CONTAINER_CUBBY_PASSWORD"));
+        assert_eq!(secret.container_env_key, String::from("PASSWORD"));
     }
 
     #[tokio::test]
@@ -259,5 +312,19 @@ mod tests {
         assert_eq!(config.include.len(), 0);
         assert_eq!(config.containers.len(), 2);
         assert_eq!(config.containers[0].name, "container-cubby");
+    }
+
+    #[tokio::test]
+    async fn test_load() {
+        let config = Config::load(&PathBuf::from("tests/example.toml")).unwrap();
+        // Find env with key "PASSWORD"
+        let password = config.containers[0]
+            .env
+            .as_ref()
+            .unwrap()
+            .iter()
+            .find(|e| e.key == "PASSWORD")
+            .unwrap();
+        assert_eq!(password.value, String::from("hunter2"));
     }
 }
