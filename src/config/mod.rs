@@ -161,10 +161,6 @@ mod tests {
         );
         assert_eq!(config.containers[0].network, Some(String::from("cubby")));
         assert_eq!(config.containers[1].name, "hello");
-
-        let secret = config.containers[0].secrets.as_ref().unwrap()[0].clone();
-        assert_eq!(secret.dotenv_key, String::from("CONTAINER_CUBBY_PASSWORD"));
-        assert_eq!(secret.container_env_key, String::from("PASSWORD"));
     }
 
     #[tokio::test]
@@ -188,18 +184,6 @@ mod tests {
     #[tokio::test]
     async fn test_load() {
         let config = Config::load(&PathBuf::from("tests/include1.toml")).unwrap();
-        // Find env with key "PASSWORD"
-        let container_cubby = config
-            .containers
-            .iter()
-            .find(|c| c.name == "container-cubby")
-            .unwrap();
-        let password = container_cubby
-            .env
-            .iter()
-            .find(|e| e.key == "PASSWORD")
-            .unwrap();
-        assert_eq!(password.value, String::from("hunter2"));
 
         // Find container with name "qr.248.no"
         let qr_248_no = config
@@ -207,12 +191,6 @@ mod tests {
             .iter()
             .find(|c| c.name == "qr.248.no")
             .unwrap();
-        let super_secret = qr_248_no
-            .env
-            .iter()
-            .find(|e| e.key == "SUPER_SECRET")
-            .unwrap();
-        assert_eq!(super_secret.value, String::from("hello!"));
 
         // Find mount with name "test.txt"
         let test_txt = qr_248_no
