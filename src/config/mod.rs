@@ -147,7 +147,6 @@ impl ContainerConfig {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::traits::ToRelative;
 
     #[tokio::test]
     async fn test_parse() {
@@ -179,30 +178,5 @@ mod tests {
             .find(|c| c.name == "container-cubby")
             .unwrap();
         assert_eq!(container_cubby.name, "container-cubby");
-    }
-
-    #[tokio::test]
-    async fn test_load() {
-        let config = Config::load(&PathBuf::from("tests/include1.toml")).unwrap();
-
-        // Find container with name "qr.248.no"
-        let qr_248_no = config
-            .containers
-            .iter()
-            .find(|c| c.name == "qr.248.no")
-            .unwrap();
-
-        // Find mount with name "test.txt"
-        let test_txt = qr_248_no
-            .mounts
-            .as_ref()
-            .unwrap()
-            .iter()
-            .find(|m| m.container_path == "test.txt")
-            .unwrap();
-        assert_eq!(
-            test_txt.host_path.to_relative(&qr_248_no.base_directory()),
-            String::from("tests/dir/test.txt")
-        );
     }
 }

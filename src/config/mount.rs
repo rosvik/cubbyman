@@ -30,3 +30,32 @@ where
     let mounts: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
     Ok(mounts.map(|mounts| mounts.iter().map(|m| Mount::from_string(m)).collect()))
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::{config::Config, traits::ToRelative};
+    use std::path::PathBuf;
+
+    #[tokio::test]
+    async fn test_path_after_include() {
+        let config = Config::load(&PathBuf::from("tests/include1.toml")).unwrap();
+
+        let qr_248_no = config
+            .containers
+            .iter()
+            .find(|c| c.name == "qr.248.no")
+            .unwrap();
+
+        let test_txt = qr_248_no
+            .mounts
+            .as_ref()
+            .unwrap()
+            .iter()
+            .find(|m| m.container_path == "test.txt")
+            .unwrap();
+        assert_eq!(
+            test_txt.host_path.to_relative(&qr_248_no.base_directory()),
+            String::from("tests/dir/test.txt")
+        );
+    }
+}
