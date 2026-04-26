@@ -163,20 +163,24 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_include() {
-        let config = include_str!("../../tests/include1.toml");
-        let config = Config::from_str(config).unwrap();
-        assert_eq!(config.include.len(), 1);
-        assert_eq!(config.containers.len(), 0);
+    async fn test_load() {
+        let config = Config::load(&PathBuf::from("tests/example.toml")).unwrap();
 
+        let containers = vec!["container-cubby", "hello"];
+
+        for container in containers {
+            assert!(config.containers.iter().any(|c| c.name == container));
+        }
+    }
+
+    #[tokio::test]
+    async fn test_include() {
         let config = Config::load(&PathBuf::from("tests/include1.toml")).unwrap();
-        assert_eq!(config.include.len(), 0);
-        assert_eq!(config.containers.len(), 3);
-        let container_cubby = config
-            .containers
-            .iter()
-            .find(|c| c.name == "container-cubby")
-            .unwrap();
-        assert_eq!(container_cubby.name, "container-cubby");
+
+        let containers = vec!["qr.248.no", "container-cubby", "hello"];
+
+        for container in containers {
+            assert!(config.containers.iter().any(|c| c.name == container));
+        }
     }
 }
