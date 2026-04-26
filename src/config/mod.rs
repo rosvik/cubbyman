@@ -1,14 +1,15 @@
-use crate::{traits::ToString, utils};
-use clio::Input;
-use serde::{Deserialize, Deserializer, Serialize};
-use std::{
-    error::Error,
-    fmt::Display,
-    fs::File,
-    hash::{Hash, Hasher},
-    io::Read,
-    path::{Path, PathBuf},
+use crate::{
+    config::{env::Env, login::Login, mount::Mount, port::Port, secret::Secret, volume::Volume},
+    utils,
 };
+use serde::{Deserialize, Serialize};
+use std::{error::Error, fs::File, io::Read, path::PathBuf};
+mod env;
+mod login;
+mod mount;
+mod port;
+mod secret;
+mod volume;
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Config {
@@ -23,25 +24,6 @@ pub struct Config {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Login {
-    pub registry: String,
-    pub username: String,
-    pub password: String,
-}
-impl Hash for Login {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.registry.hash(state);
-        self.username.hash(state);
-    }
-}
-impl PartialEq for Login {
-    fn eq(&self, other: &Self) -> bool {
-        self.registry == other.registry && self.username == other.username
-    }
-}
-impl Eq for Login {}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ContainerConfig {
     /// The image to run, e.g. "example/cubbyman:latest"
     pub image: String,
@@ -53,15 +35,15 @@ pub struct ContainerConfig {
     pub cmd: Option<Vec<String>>,
 
     /// Environment variables on the format `"KEY=value"`.
-    #[serde(default, deserialize_with = "deserialize_envs")]
+    #[serde(default, deserialize_with = "env::deserialize_envs")]
     pub env: Vec<Env>,
 
     /// Secrets to load from .env file. Format is `dotenv_key:container_env_key`.
-    #[serde(default, deserialize_with = "deserialize_secrets")]
+    #[serde(default, deserialize_with = "secret::deserialize_secrets")]
     secrets: Option<Vec<Secret>>,
 
     /// The ports to bind, e.g. ["8602:8602"] (host:container)
-    #[serde(default, deserialize_with = "deserialize_ports")]
+    #[serde(default, deserialize_with = "port::deserialize_ports")]
     pub ports: Option<Vec<Port>>,
 
     /// Network name or mode. Modes are `bridge`, `host`,
@@ -71,12 +53,12 @@ pub struct ContainerConfig {
 
     /// The local directories to bind to the container. Format is
     /// `host_path:container_path`.
-    #[serde(default, deserialize_with = "deserialize_mounts")]
+    #[serde(default, deserialize_with = "mount::deserialize_mounts")]
     pub mounts: Option<Vec<Mount>>,
 
     /// The volumes to bind to the container. Format is
     /// `volume_name:container_path`.
-    #[serde(default, deserialize_with = "deserialize_volumes")]
+    #[serde(default, deserialize_with = "volume::deserialize_volumes")]
     pub volumes: Option<Vec<Volume>>,
 
     /// The user to run the container as. Format is `user:group`.
@@ -84,156 +66,7 @@ pub struct ContainerConfig {
 
     /// The base directory to resolve paths relative to.
     #[serde(skip)]
-    base_directory: Option<PathBuf>,
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Env {
-    pub key: String,
-    pub value: String,
-}
-impl Env {
-    pub fn from_string(string: &str) -> Self {
-        let (key, value) = string.split_once('=').unwrap();
-        Self {
-            key: key.to_string(),
-            value: value.to_string(),
-        }
-    }
-}
-impl Display for Env {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}={}", self.key, self.value)
-    }
-}
-fn deserialize_envs<'de, D>(deserializer: D) -> Result<Vec<Env>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let envs: Vec<String> = Deserialize::deserialize(deserializer)?;
-    Ok(envs.iter().map(|e| Env::from_string(e)).collect())
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Secret {
-    pub dotenv_key: String,
-    pub container_env_key: String,
-}
-
-impl Secret {
-    pub fn from_string(string: &str) -> Result<Self, std::io::ErrorKind> {
-        let string = string.trim();
-        if string.is_empty() {
-            return Err(std::io::ErrorKind::InvalidInput);
-        }
-        let (dotenv_key, container_env_key) = string.split_once(':').unwrap_or((string, string));
-        Ok(Self {
-            dotenv_key: dotenv_key.to_string(),
-            container_env_key: container_env_key.to_string(),
-        })
-    }
-}
-
-fn deserialize_secrets<'de, D>(deserializer: D) -> Result<Option<Vec<Secret>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let secrets: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
-    match secrets {
-        Some(secrets) => {
-            let secrets: Vec<Secret> = secrets
-                .iter()
-                .map(|s| Secret::from_string(s))
-                .filter(|s| s.is_ok())
-                .flatten()
-                .collect();
-            Ok(Some(secrets))
-        }
-        None => Ok(None),
-    }
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Port {
-    pub host: i16,
-    pub container: i16,
-}
-impl Port {
-    pub fn from_string(string: &str) -> Self {
-        let (host, container) = string.split_once(':').unwrap();
-        Self {
-            host: host.parse::<i16>().unwrap(),
-            container: container.parse::<i16>().unwrap(),
-        }
-    }
-}
-impl Display for Port {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.host, self.container)
-    }
-}
-fn deserialize_ports<'de, D>(deserializer: D) -> Result<Option<Vec<Port>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let ports: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
-    Ok(ports.map(|ports| ports.iter().map(|p| Port::from_string(p)).collect()))
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Mount {
-    /// The local path to bind to the container. Relative to the directory of the config file.
-    pub host_path: PathBuf,
-    /// The path to bind to the container.
-    pub container_path: String,
-}
-impl Mount {
-    pub fn from_string(string: &str) -> Self {
-        let (host_path, container_path) = string.split_once(':').unwrap();
-        Self {
-            host_path: PathBuf::from(host_path),
-            container_path: container_path.to_string(),
-        }
-    }
-}
-impl Display for Mount {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.host_path.to_string(), self.container_path)
-    }
-}
-fn deserialize_mounts<'de, D>(deserializer: D) -> Result<Option<Vec<Mount>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let mounts: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
-    Ok(mounts.map(|mounts| mounts.iter().map(|m| Mount::from_string(m)).collect()))
-}
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Volume {
-    pub name: String,
-    pub container_path: String,
-}
-impl Volume {
-    pub fn from_string(string: &str) -> Self {
-        let (name, container_path) = string.split_once(':').unwrap();
-        Self {
-            name: name.to_string(),
-            container_path: container_path.to_string(),
-        }
-    }
-}
-impl Display for Volume {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}:{}", self.name, self.container_path)
-    }
-}
-fn deserialize_volumes<'de, D>(deserializer: D) -> Result<Option<Vec<Volume>>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    let volumes: Option<Vec<String>> = Deserialize::deserialize(deserializer)?;
-    Ok(volumes.map(|volumes| volumes.iter().map(|v| Volume::from_string(v)).collect()))
+    pub base_directory: Option<PathBuf>,
 }
 
 impl Config {
@@ -311,29 +144,6 @@ impl ContainerConfig {
     }
 }
 
-pub fn path_or_default(input: Option<Input>) -> Option<PathBuf> {
-    if let Some(input) = input {
-        Some(input.path().to_path_buf())
-    } else {
-        get_default_config_path().map(PathBuf::from)
-    }
-}
-
-/// Will look for a `cubbyfile.toml` in the current directory
-fn get_default_config_path() -> Option<String> {
-    let path = Path::new("cubbyfile.toml");
-    if path.exists() {
-        println!(
-            "Using cubbyfile.toml in current directory: {}",
-            path.to_string_lossy()
-        );
-        return Some(path.to_string_lossy().to_string());
-    }
-
-    println!("No configuration file found");
-    None
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -341,7 +151,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_parse() {
-        let config = include_str!("../tests/example.toml");
+        let config = include_str!("../../tests/example.toml");
         let config = Config::from_str(config).unwrap();
         assert_eq!(config.containers.len(), 2);
         assert_eq!(config.containers[0].name, "container-cubby");
@@ -359,7 +169,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_include() {
-        let config = include_str!("../tests/include1.toml");
+        let config = include_str!("../../tests/include1.toml");
         let config = Config::from_str(config).unwrap();
         assert_eq!(config.include.len(), 1);
         assert_eq!(config.containers.len(), 0);

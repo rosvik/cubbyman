@@ -1,10 +1,11 @@
 use bollard::secret::{Port, PortTypeEnum};
+use clio::Input;
 use std::{
     collections::HashMap,
     fs::File,
     hash::Hash,
     io::{BufRead, BufReader},
-    path::Path,
+    path::{Path, PathBuf},
 };
 
 pub fn has_duplicates_by_key<T, K: Eq + Hash>(vec: &[T], key: fn(&T) -> K) -> bool {
@@ -91,6 +92,29 @@ fn parse_env_file(
         env.insert(key.to_string(), value.to_string());
     }
     Ok(env)
+}
+
+pub fn config_path_or_default(input: Option<Input>) -> Option<PathBuf> {
+    if let Some(input) = input {
+        Some(input.path().to_path_buf())
+    } else {
+        get_default_config_path().map(PathBuf::from)
+    }
+}
+
+/// Will look for a `cubbyfile.toml` in the current directory
+fn get_default_config_path() -> Option<String> {
+    let path = Path::new("cubbyfile.toml");
+    if path.exists() {
+        println!(
+            "Using cubbyfile.toml in current directory: {}",
+            path.to_string_lossy()
+        );
+        return Some(path.to_string_lossy().to_string());
+    }
+
+    println!("No configuration file found");
+    None
 }
 
 #[cfg(test)]
