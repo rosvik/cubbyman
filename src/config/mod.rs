@@ -66,7 +66,7 @@ pub struct ContainerConfig {
 
     /// The base directory to resolve paths relative to.
     #[serde(skip)]
-    pub base_directory: Option<PathBuf>,
+    base_directory: Option<PathBuf>,
 }
 
 impl Config {
@@ -153,13 +153,18 @@ mod tests {
         let config = include_str!("../../tests/example.toml");
         let config = Config::from_str(config).unwrap();
         assert_eq!(config.containers.len(), 2);
-        assert_eq!(config.containers[0].name, "container-cubby");
+
+        let hello = &config.containers[1];
+        assert_eq!(hello.name, "hello");
+        assert_eq!(hello.image, "hello");
+        assert_eq!(hello.network, None);
+
+        let container_cubby = &config.containers[0];
+        assert_eq!(container_cubby.name, "container-cubby");
         assert_eq!(
-            config.containers[0].image,
+            container_cubby.image,
             "cubby.no/rosvik/container-cubby:main"
         );
-        assert_eq!(config.containers[0].network, Some(String::from("cubby")));
-        assert_eq!(config.containers[1].name, "hello");
     }
 
     #[tokio::test]
