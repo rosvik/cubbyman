@@ -24,12 +24,8 @@ pub trait ToAbsolute {
 }
 impl ToAbsolute for PathBuf {
     fn to_absolute(&self) -> PathBuf {
-        if self.is_absolute() {
-            return self.clone();
-        }
-        let path = std::env::current_dir().unwrap().join(self);
-        path.canonicalize().unwrap_or_else(|e| {
-            panic!("Failed to resolve path '{}': {}", path.to_string_lossy(), e)
+        self.canonicalize().unwrap_or_else(|e| {
+            panic!("Failed to resolve path '{}': {}", self.to_string_lossy(), e)
         })
     }
 }
@@ -46,6 +42,8 @@ impl ToPath for Input {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::env::temp_dir;
+    use std::fs::create_dir_all;
 
     #[test]
     fn test_to_relative() {
@@ -54,5 +52,24 @@ mod tests {
             path.to_relative(&PathBuf::from("tests")),
             PathBuf::from("tests/dir/test.txt")
         );
+    }
+
+    #[test]
+    fn test_to_absolute_resolves_dotdot() {
+        let tmp = temp_dir().canonicalize().unwrap();
+        let dir = tmp.join("dotdot_test");
+        create_dir_all(&dir).unwrap();
+
+        // `dotdot_test/..` should canonicalize back to `tmp`
+        assert_eq!(dir.join("..").to_absolute(), tmp);
+
+        let _ = std::fs::remove_dir(&dir);
+    }
+
+    #[test]
+    fn test_to_absolute_from_relative() {
+        let current_dir = std::env::current_dir().unwrap();
+        let path = PathBuf::from(".");
+        assert_eq!(path.to_absolute(), current_dir);
     }
 }
