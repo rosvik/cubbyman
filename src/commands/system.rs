@@ -66,3 +66,18 @@ pub async fn reload_all(socket: &bollard::Docker, config: &Config) {
     println!("Reloaded all containers");
     containers::print_containers(socket).await;
 }
+
+pub async fn prune(socket: &bollard::Docker) {
+    let containers = socket.prune_containers::<String>(None).await.unwrap();
+    println!(
+        "Pruned containers: {:?} bytes freed, {:?} containers deleted",
+        containers.space_reclaimed, containers.containers_deleted
+    );
+    let images = socket.prune_images::<String>(None).await.unwrap();
+    println!(
+        "Pruned images: {:?} bytes freed, {:?} images deleted",
+        images.space_reclaimed, images.images_deleted
+    );
+    let networks = socket.prune_networks::<String>(None).await.unwrap();
+    println!("Pruned networks: {:?}", networks.networks_deleted);
+}

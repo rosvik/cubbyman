@@ -38,6 +38,11 @@ struct Args {
         help = "Destroy containers and delete images listed in the specified config file"
     )]
     purge: Option<Option<Input>>,
+    #[arg(
+        long,
+        help = "Prune containers, images and networks that are not in use"
+    )]
+    prune: bool,
 
     #[arg(
         long,
@@ -97,6 +102,8 @@ async fn main() {
             }
             commands::images::delete_image(&socket, &config, &container.image).await;
         }
+    } else if args.prune {
+        commands::system::prune(&socket).await;
     }
 
     if args.list_images {
