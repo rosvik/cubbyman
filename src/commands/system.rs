@@ -66,3 +66,21 @@ pub async fn reload_all(socket: &bollard::Docker, config: &Config) {
     println!("Reloaded all containers");
     containers::print_containers(socket).await;
 }
+
+pub async fn reload(
+    socket: &bollard::Docker,
+    config: &Config,
+    name: &str,
+) -> Result<(), std::io::Error> {
+    if let Some(container) = config.containers.iter().find(|c| c.name == name) {
+        if let Some(network) = &container.network {
+            networks::create_network(socket, network).await;
+        }
+        images::pull_image(socket, config, container.image.clone()).await;
+        containers::run_container(socket, container.clone()).await;
+
+        Ok(())
+    } else {
+        Err(std::io::ErrorKind::NotFound.into())
+    }
+}
