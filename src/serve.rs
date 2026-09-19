@@ -1,7 +1,7 @@
 use crate::{commands, config::Config, middleware::basic_authenticate, traits::ToPath};
 use axum::{
     Router,
-    extract::State,
+    extract::{Query, State},
     middleware,
     response::IntoResponse,
     routing::{get, post},
@@ -41,8 +41,15 @@ fn api_router(state: AppState) -> Router {
         .with_state(state)
 }
 
-async fn reload(State(state): State<AppState>) -> impl IntoResponse {
-    println!("Reloading");
+#[derive(Debug, serde::Deserialize)]
+struct ReloadQuery {
+    name: Option<String>,
+}
+async fn reload(
+    Query(query): Query<ReloadQuery>,
+    State(state): State<AppState>,
+) -> impl IntoResponse {
+    println!("Reloading {}", query.name.as_deref().unwrap_or("all"));
     let config = match Config::load(&state.config_arg.to_path_buf()) {
         Ok(config) => config,
         Err(e) => {
@@ -50,6 +57,16 @@ async fn reload(State(state): State<AppState>) -> impl IntoResponse {
             return (axum::http::StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response();
         }
     };
-    commands::system::reload_all(&state.socket, &config).await;
-    (axum::http::StatusCode::OK, "Reloaded").into_response()
+
+    let result = match query.name {
+        Some(name) => commands::system::reload(&state.socket, &config, &name).await,
+        None => Ok(commands::system::reload_all(&state.socket, &config).await),
+    };
+
+    if let Err(e) = result {
+        println!("Error reloading container: {e}");
+        (axum::http::StatusCode::NOT_FOUND, e.to_string()).into_response()
+    } else {
+        (axum::http::StatusCode::OK, "Reloaded").into_response()
+    }
 }
